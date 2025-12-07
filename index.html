@@ -83,7 +83,6 @@
     h2 { margin: 0 0 12px; font-size: 20px; color: var(--accent); letter-spacing: -0.5px; }
     label { display: block; margin-top: 14px; margin-bottom: 6px; font-weight: 600; font-size: 12px; color: #9fb3c9; }
     
-    /* Input Styles */
     input[type="text"], input[type="number"], input[type="file"], select {
       width: 100%; padding: 10px 12px; border-radius: 8px; 
       border: 1px solid var(--border);
@@ -114,57 +113,50 @@
     .small-divider { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
     .section-title { margin-top: 18px; font-weight: 700; color: #38bdf8; font-size: 13px; text-transform: uppercase; }
 
-    /* ===== AIRLINE LIST STYLE ===== */
+    /* ===== AIRLINE LIST (PERBAIKAN DESKTOP) ===== */
     .airline-list { display: flex; flex-direction: column; gap: 8px; }
     
+    /* Layout Desktop: Grid 5 Kolom untuk Input, Logo Wrapper di bawah */
     .airline-row { 
       display: grid; 
-      grid-template-columns: 1.4fr 0.9fr 1.4fr 0.9fr 32px; 
+      /* Kolom: Maskapai (Lebar) | Flight (Kecil) | Kota (Sedang) | Jam (Kecil) | Hapus (Fix) */
+      grid-template-columns: 1.6fr 0.9fr 1.4fr 0.9fr 32px; 
       gap: 6px; 
       align-items: center; 
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.05);
       border-radius: 10px;
-      padding: 8px;
+      padding: 10px;
     }
     
     .airline-row input { 
       background: rgba(15, 23, 42, 0.8);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px; padding: 9px 8px; 
+      border-radius: 6px; padding: 8px; 
       font-size: 11px; font-weight: 600; color: #f1f5f9;
       min-width: 0;
       box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); 
     }
-    .airline-row input:focus {
-      border-color: var(--accent); background: #020617;
-      box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
-    }
-
+    
     .airline-row button { 
       background: rgba(239, 68, 68, 0.2); color: #ef4444;
       border: 1px solid rgba(239, 68, 68, 0.3);
       padding: 0; height: 32px; border-radius: 6px; margin:0;
+      cursor: pointer;
     }
+    .airline-row button:hover { background: #ef4444; color: #fff; }
 
-    /* Style khusus untuk Input Logo (akan digenerate JS) */
-    .logo-controls {
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 6px;
-      border: 1px solid var(--border);
+    /* Wrapper Logo Control (Di Desktop: Baris Baru Full Width) */
+    .logo-wrapper {
+      grid-column: 1 / -1; /* Span dari awal sampai akhir */
+      display: flex; align-items: center; gap: 6px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255,255,255,0.1);
     }
-    .logo-controls input[type="number"] {
-      padding: 4px; height: 30px; text-align: center;
-      border: none; background: transparent; font-weight: 700;
+    .logo-controls input {
+       width: 50px; text-align: center; padding: 4px; height: 28px;
     }
-
-    /* Grid Pengaturan Angka */
-    .settings-grid {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
-      margin-top: 8px;
-    }
-    .setting-item label { margin-top: 0; font-size: 11px; opacity: 0.8; }
-    .setting-item input { text-align: center; font-weight: 700; color: var(--accent); }
 
     /* Accordion */
     details {
@@ -190,19 +182,27 @@
     }
     #togglePanel svg { width: 26px; height: 26px; stroke-width: 2.5; }
 
-    /* Mobile Responsive */
+    /* ===== MOBILE RESPONSIVE ===== */
     @media (max-width: 900px) {
       body { flex-direction: column; }
       main { position: fixed; inset: 0; padding: 16px 16px 80px 16px; }
       canvas { width: 100%; height: 100%; object-fit: contain; }
       aside { position: fixed; inset: 0; width: 85%; max-width: 340px; box-shadow: 10px 0 40px rgba(0,0,0,0.6); }
       
+      /* Reset Grid untuk Mobile (Pake Flex Wrap) */
       .airline-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
       .airline-row input { flex: 1 1 45%; min-width: 110px; }
       
-      /* Kontrol Logo & Hapus di Mobile */
-      .airline-row .logo-wrapper { flex: 1 1 auto; order: 5; margin-right: 8px; }
-      .airline-row button { flex: 0 0 38px; width: 38px !important; order: 6; }
+      /* Di HP, Logo di kiri bawah, Tombol Hapus di kanan bawah */
+      .logo-wrapper { 
+        flex: 1 1 auto; 
+        order: 5; /* Urutan setelah input */
+        margin-top: 0; border-top: none; padding-top: 0;
+      }
+      .airline-row button { 
+        flex: 0 0 32px; width: 32px !important; 
+        order: 6; 
+      }
       
       #togglePanel { bottom: 20px; right: 20px; width: 50px; height: 50px; }
     }
@@ -227,6 +227,7 @@
         <select id="selDay"></select> <select id="selMonth"></select> <select id="selYear"></select>
         <button class="btn secondary" id="applyDateSmall" type="button" style="margin-top:0; padding:0 12px;">Set</button>
       </div>
+      <span class="small">Format otomatis: HARI, DD BULAN YYYY</span>
 
       <label>Background</label>
       <select id="bgSelect">
@@ -254,20 +255,11 @@
           
           <hr class="small-divider">
           
-          <label style="margin-bottom:2px;">Ukuran Font (Pixel)</label>
-          <div class="settings-grid">
-            <div class="setting-item">
-              <label>Tanggal</label>
-              <input id="sizeDate" type="number" value="40">
-            </div>
-            <div class="setting-item">
-              <label>Isi Jadwal</label>
-              <input id="sizeRow" type="number" value="30">
-            </div>
-            <div class="setting-item">
-              <label>Jam Ops</label>
-              <input id="sizeHours" type="number" value="35">
-            </div>
+          <label>Ukuran Font (Pixel)</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+            <div><label style="margin-top:0;font-size:10px">Tanggal</label><input id="sizeDate" type="number" value="40"></div>
+            <div><label style="margin-top:0;font-size:10px">Jadwal</label><input id="sizeRow" type="number" value="30"></div>
+            <div><label style="margin-top:0;font-size:10px">Jam Ops</label><input id="sizeHours" type="number" value="35"></div>
           </div>
           
           <label>Warna Teks</label>
@@ -275,19 +267,15 @@
             <div style="flex:1;">
               <label style="margin-top:0; font-size:10px;">Global</label>
               <input id="allTextColor" type="color" value="#ffffff" style="height:35px; padding:0;">
+              <input id="allTextHex" type="text" value="#ffffff" placeholder="#FFFFFF" style="margin-top:4px;">
             </div>
             <div style="flex:1;">
               <label style="margin-top:0; font-size:10px;">Jam Ops</label>
               <input id="hoursColor" type="color" value="#ffffff" style="height:35px; padding:0;">
             </div>
           </div>
-          
-          <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
-            <input id="showIndicators" type="checkbox" checked style="width:auto;">
-            <label for="showIndicators" style="margin:0; font-weight:400;">Tampilkan Grid</label>
-          </div>
 
-          <button id="lockSettings" class="btn" style="background:#f59e0b; color:#0f172a; margin-top:16px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+          <button id="lockSettings" class="btn" style="background:#f59e0b; color:#0f172a; margin-top:16px;">
             🔒 Kunci & Simpan Pengaturan
           </button>
         </div>
@@ -312,6 +300,6 @@
     <canvas id="poster" width="1080" height="1920"></canvas>
   </main>
 
-  <script src="jadwal.js?v=17"></script>
+  <script src="jadwal.js?v=18"></script>
 </body>
 </html>
