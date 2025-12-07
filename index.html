@@ -3,243 +3,308 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Flight Schedule Poster – WA Status</title>
-  <link rel="stylesheet" href="jadwal.css?v=6" />
-
+  <meta name="theme-color" content="#0f172a">
+  <title>Flight Schedule Poster</title>
+  
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
   <style>
     :root { 
       --bg: #0f172a; 
-      --panel-bg: #1e293b;
-      --text: #f1f5f9; 
+      --panel-bg: rgba(30, 41, 59, 0.95);
+      --text: #f8fafc; 
       --accent: #38bdf8;
       --accent-hover: #0ea5e9;
-      --border: #334155;
-      --input-bg: #0f172a;
+      --border: rgba(255, 255, 255, 0.1);
+      --input-bg: rgba(0, 0, 0, 0.3);
+      --fab-bg: #38bdf8;
+      --fab-text: #0f172a;
     }
-    * { box-sizing: border-box; outline: none; }
+
+    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
     
     body {
       font-family: 'Montserrat', sans-serif;
       background: var(--bg); color: var(--text);
-      margin: 0; display: flex; min-height: 100svh;
-      overflow: hidden; /* Prevent body scroll if panel scrolls */
+      margin: 0; padding: 0;
+      height: 100svh; width: 100vw;
+      overflow: hidden; /* Mencegah scroll pada body utama */
+      display: flex;
     }
 
-    /* ===== Panel Sidebar ===== */
+    /* ===== MAIN CANVAS AREA (Layer Belakang) ===== */
+    main {
+      flex: 1;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      background-color: #020617;
+      background-image: 
+        radial-gradient(circle at 50% 50%, #1e293b 0%, transparent 50%),
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 40px 40px, 40px 40px;
+      z-index: 1;
+      padding: 20px;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Canvas Responsif */
+    canvas {
+      background: #222; 
+      border-radius: 12px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      /* Logika responsive: Fit to screen height */
+      height: 100%; 
+      max-height: calc(100svh - 40px);
+      width: auto;
+      aspect-ratio: 1080 / 1920;
+      object-fit: contain;
+    }
+
+    /* ===== SIDEBAR / PANEL KONTROL (Layer Depan) ===== */
     aside {
-      width: 400px; /* Sedikit diperlebar untuk kenyamanan */
-      background: var(--panel-bg); 
-      padding: 20px; 
-      overflow-y: auto;
+      width: 400px;
+      height: 100%;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px); /* Efek kaca buram */
+      -webkit-backdrop-filter: blur(12px);
       border-right: 1px solid var(--border);
-      display: flex; flex-direction: column; gap: 16px;
-      transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 0;
+      display: flex; flex-direction: column;
       z-index: 100;
-      box-shadow: 4px 0 24px rgba(0,0,0,0.3);
-      height: 100svh;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      box-shadow: 5px 0 25px rgba(0,0,0,0.5);
     }
-    
-    body.panel-collapsed aside { transform: translateX(-100%); width: 0; padding: 0; opacity: 0; }
 
-    /* Typography & Elements */
-    h2 { margin: 0 0 4px; font-size: 20px; color: var(--accent); letter-spacing: -0.5px; }
-    p.subtitle { margin: 0 0 16px; font-size: 12px; color: #94a3b8; opacity: 0.8; }
-    
-    label { display: block; margin-top: 12px; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #cbd5e1; }
+    /* Scrollable Content di dalam Aside */
+    .aside-content {
+      flex: 1; overflow-y: auto; padding: 24px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .aside-content::-webkit-scrollbar { width: 6px; }
+    .aside-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* State: Panel Collapsed (Hidden) */
+    body.panel-collapsed aside {
+      transform: translateX(-100%);
+      position: absolute; /* Lepas dari flow layout saat hidden */
+    }
+    body.panel-collapsed main { margin-left: 0; }
+
+    /* ===== KOMPONEN UI ===== */
+    h2 { margin: 0 0 4px; font-size: 22px; color: var(--accent); letter-spacing: -0.5px; }
+    p.subtitle { margin: 0 0 20px; font-size: 12px; color: #94a3b8; }
+
+    label { display: block; margin-top: 16px; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #e2e8f0; }
     
     input[type="text"], input[type="file"], select {
-      width: 100%; padding: 10px 12px; border-radius: 8px; 
+      width: 100%; padding: 12px; border-radius: 10px; 
       border: 1px solid var(--border);
       background: var(--input-bg); color: #fff;
-      font-size: 14px; transition: border-color 0.2s;
+      font-size: 14px; font-family: inherit;
+      transition: border-color 0.2s, background 0.2s;
     }
-    input:focus, select:focus { border-color: var(--accent); }
+    input:focus, select:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); }
 
-    /* Buttons */
+    /* Button Styling */
     .btn {
       background: var(--accent); color: #0f172a; 
-      border: none; padding: 12px; border-radius: 8px;
+      border: none; padding: 14px; border-radius: 10px;
       cursor: pointer; width: 100%; font-weight: 700; font-size: 14px;
-      transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px;
+      transition: transform 0.2s, filter 0.2s;
+      display: flex; justify-content: center; align-items: center; gap: 8px;
     }
-    .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
-    .btn.secondary { background: var(--border); color: #fff; }
-    .btn.secondary:hover { background: #475569; }
+    .btn:active { transform: scale(0.98); }
+    .btn.secondary { background: rgba(255,255,255,0.1); color: #fff; }
+    .btn.secondary:hover { background: rgba(255,255,255,0.15); }
+    .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 8px; }
+
+    /* List & Accordion */
+    .airline-list { display: flex; flex-direction: column; gap: 8px; }
+    .airline-row { 
+      display: grid; grid-template-columns: 1fr 0.6fr 0.8fr 0.6fr auto; 
+      gap: 6px; align-items: center; 
+      background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px;
+    }
+    .airline-row input { padding: 8px; font-size: 12px; background: transparent; border: 1px solid transparent; }
+    .airline-row input:focus { border-color: var(--accent); background: var(--input-bg); }
     
-    .btn-small { padding: 6px 12px; font-size: 12px; }
-
-    /* Sections & Accordion */
-    .section-title { 
-      margin-top: 24px; margin-bottom: 8px; 
-      font-weight: 800; color: #fff; font-size: 14px; 
-      text-transform: uppercase; letter-spacing: 0.5px;
-      border-bottom: 1px solid var(--border); padding-bottom: 4px;
-    }
-
     details {
-      background: rgba(0,0,0,0.2); border-radius: 8px;
-      margin-top: 10px; border: 1px solid var(--border);
+      background: rgba(0,0,0,0.2); border-radius: 10px;
+      margin-top: 16px; border: 1px solid var(--border); overflow: hidden;
     }
     details summary {
-      padding: 12px; cursor: pointer; font-weight: 600; font-size: 13px;
+      padding: 14px; cursor: pointer; font-weight: 600; font-size: 13px;
       list-style: none; display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255,255,255,0.02);
     }
-    details summary::after { content: '+'; font-size: 16px; font-weight: bold; }
+    details summary::after { content: '+'; font-size: 16px; font-weight: 800; color: var(--accent); }
     details[open] summary::after { content: '−'; }
-    details[open] summary { border-bottom: 1px solid var(--border); }
-    .details-content { padding: 12px; }
+    .details-content { padding: 16px; border-top: 1px solid var(--border); }
 
-    /* Date Builder Grid */
-    .date-grid { display: grid; grid-template-columns: 0.8fr 1.5fr 1fr auto; gap: 6px; }
+    /* Date Builder */
+    .date-grid { display: grid; grid-template-columns: 0.8fr 1.5fr 1fr auto; gap: 8px; }
 
-    /* Main Canvas Area */
-    main {
-      flex: 1; display: flex; align-items: center; justify-content: center; 
-      background-color: #020617;
-      background-image: radial-gradient(#1e293b 1px, transparent 1px);
-      background-size: 24px 24px;
-      padding: 20px; position: relative; overflow: hidden;
-    }
-
-    canvas {
-      background: #222; border-radius: 12px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-      aspect-ratio: 1080 / 1920;
-      height: min(calc(100svh - 40px), 900px);
-      width: auto; object-fit: contain;
-    }
-
-    /* Toggle Button */
+    /* ===== FAB (Floating Action Button) ===== */
     #togglePanel {
-      position: absolute; right: 20px; top: 20px; z-index: 50;
-      background: var(--panel-bg); color: #fff; 
-      border: 1px solid var(--border);
-      border-radius: 8px; padding: 10px 16px; 
-      font-weight: 700; cursor: pointer; 
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      display: flex; align-items: center; gap: 8px;
+      position: fixed; 
+      bottom: 24px; right: 24px; z-index: 200;
+      background: var(--fab-bg); color: var(--fab-text);
+      border: none; border-radius: 50px;
+      padding: 0 20px; height: 56px;
+      font-weight: 700; cursor: pointer;
+      box-shadow: 0 8px 20px rgba(56, 189, 248, 0.4);
+      display: flex; align-items: center; gap: 10px;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    #togglePanel:hover { background: #334155; }
+    #togglePanel:hover { transform: translateY(-2px) scale(1.05); }
+    #togglePanel:active { transform: scale(0.95); }
+    
+    #togglePanel svg { width: 24px; height: 24px; }
+    #togglePanel span { font-size: 14px; }
 
-    /* Utility */
-    .row-colors { display: flex; gap: 8px; align-items: center; }
-    input[type="color"] { width: 40px; height: 40px; border: none; padding: 0; background: none; cursor: pointer; }
-    .helper-text { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
+    /* Ubah teks tombol saat panel tertutup */
+    body.panel-collapsed #togglePanel span::after { content: "Edit Jadwal"; }
+    body:not(.panel-collapsed) #togglePanel span::after { content: "Selesai"; }
+    
+    /* Ubah icon saat panel terbuka */
+    body:not(.panel-collapsed) #togglePanel { background: #fff; color: #0f172a; }
 
-    /* Responsive */
+    /* ===== MOBILE RESPONSIVE TWEAKS ===== */
     @media (max-width: 900px) {
-      body { flex-direction: column; overflow: auto; }
-      aside { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); position: relative; }
-      main { min-height: 60vh; padding: 10px; }
-      canvas { width: 100%; height: auto; max-height: none; }
-      body.panel-collapsed aside { display: none; }
-      #togglePanel { position: fixed; top: 10px; right: 10px; }
+      body { flex-direction: column; }
+      
+      /* Canvas selalu full di mobile */
+      main { 
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+        padding: 16px 16px 80px 16px; /* Bottom padding for FAB space */
+        z-index: 1;
+      }
+      
+      canvas {
+        width: 100%; height: 100%; 
+        max-height: 100%; 
+        object-fit: contain;
+      }
+
+      /* Panel melayang di atas canvas (Drawer) */
+      aside {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        width: 85%; max-width: 340px;
+        box-shadow: 10px 0 40px rgba(0,0,0,0.6);
+        transform: translateX(0);
+      }
+      
+      /* Saat collapsed (default di mobile sebaiknya hidden, tapi kita ikut logika JS toggle) */
+      /* Kita atur: Panel muncul menutupi sebagian layar */
+      
+      .airline-row { 
+        display: flex; flex-wrap: wrap; gap: 8px;
+      }
+      .airline-row input { flex: 1 1 40%; min-width: 80px; }
+      .airline-row button { flex: 0 0 auto; margin-left: auto; }
+
+      #togglePanel { bottom: 20px; right: 20px; height: 50px; padding: 0 16px; }
     }
   </style>
 </head>
-<body>
-
-  <button id="togglePanel">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-    <span>Menu</span>
+<body class=""> <button id="togglePanel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+      <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+      <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
+    </svg>
+    <span></span>
   </button>
 
   <aside>
-    <div>
-      <h2>Flight Scheduler</h2>
-      <p class="subtitle">Buat poster jadwal penerbangan WA Status</p>
-    </div>
-
-    <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;">
-      <label>📅 Hari & Tanggal</label>
-      <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
-      
-      <div class="date-grid" style="margin-top:8px;">
-        <select id="selDay" aria-label="Tanggal"></select>
-        <select id="selMonth" aria-label="Bulan"></select>
-        <select id="selYear" aria-label="Tahun"></select>
-        <button class="btn btn-small secondary" id="applyDateSmall" type="button">Set</button>
+    <div class="aside-content">
+      <div>
+        <h2>Flight Scheduler</h2>
+        <p class="subtitle">Editor Poster Jadwal Penerbangan</p>
       </div>
-      
-      <label style="margin-top:16px;">🖼️ Background Poster</label>
-      <select id="bgSelect">
-        <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
-        <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
-        <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
-        <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
-        <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
-      </select>
-      <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
-        <span style="font-size:11px; color:#94a3b8;">Atau upload sendiri:</span>
-        <input type="file" id="bgInput" accept="image/*" style="font-size:11px; padding:6px;" />
-      </div>
-    </div>
 
-    <div class="section-title">✈️ Input Data Penerbangan</div>
-    
-    <label>KEDATANGAN / ARRIVAL</label>
-    <div id="arrivals" class="airline-list"></div>
-    <button class="btn secondary btn-small" id="addArrival" style="margin-top:8px;">+ Tambah Baris Kedatangan</button>
-
-    <label style="margin-top:20px;">KEBERANGKATAN / DEPARTURE</label>
-    <div id="departures" class="airline-list"></div>
-    <button class="btn secondary btn-small" id="addDeparture" style="margin-top:8px;">+ Tambah Baris Keberangkatan</button>
-
-    <details>
-      <summary>🎨 Pengaturan Teks & Ukuran (Advanced)</summary>
-      <div class="details-content">
-        <label>Teks Operating Hours</label>
-        <input id="hoursText" type="text" value="Operating Hours 06.00 - 18.00 WIB" />
-
-        <div style="margin-top:16px; border-top:1px dashed #334155; padding-top:12px;">
-          <label>Ukuran Huruf Tanggal: <span id="sizeDateVal" style="color:var(--accent)">40</span>px</label>
-          <input id="sizeDate" type="range" min="28" max="72" step="1" value="40" style="width:100%">
-          
-          <label>Ukuran Huruf Baris: <span id="sizeRowVal" style="color:var(--accent)">30</span>px</label>
-          <input id="sizeRow" type="range" min="24" max="56" step="1" value="30" style="width:100%">
-          
-          <label>Ukuran Huruf Jam Ops: <span id="sizeHoursVal" style="color:var(--accent)">35</span>px</label>
-          <input id="sizeHours" type="range" min="24" max="56" step="1" value="35" style="width:100%">
+      <div style="background: rgba(255,255,255,0.03); padding: 16px; border-radius: 12px; border:1px solid var(--border);">
+        <label style="margin-top:0">📅 Tanggal Penerbangan</label>
+        <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
+        
+        <div class="date-grid" style="margin-top:10px;">
+          <select id="selDay"></select>
+          <select id="selMonth"></select>
+          <select id="selYear"></select>
+          <button class="btn btn-small secondary" id="applyDateSmall" type="button">Set</button>
         </div>
+        
+        <label>🖼️ Pilih Background</label>
+        <div style="display:flex; gap:8px;">
+          <select id="bgSelect" style="flex:1;">
+            <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
+            <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
+            <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
+            <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
+            <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
+          </select>
+          <label for="bgInput" class="btn secondary btn-small" style="width:auto; margin:0; display:flex; align-items:center;">
+            📂 <input type="file" id="bgInput" accept="image/*" style="display:none;" />
+          </label>
+        </div>
+      </div>
 
-        <div style="margin-top:16px; border-top:1px dashed #334155; padding-top:12px;">
-          <label>Warna Global Teks</label>
-          <div class="row-colors">
-            <input id="allTextColor" type="color" value="#ffffff">
-            <input id="allTextHex" type="text" value="#ffffff" placeholder="#HEX">
+      <div style="margin-top:24px;">
+        <label style="color:var(--accent); font-weight:800; letter-spacing:0.5px;">🛬 KEDATANGAN / ARRIVAL</label>
+        <div id="arrivals" class="airline-list"></div>
+        <button class="btn secondary btn-small" id="addArrival" style="margin-top:10px; border-style:dashed;">+ Tambah Baris</button>
+
+        <label style="color:var(--accent); font-weight:800; letter-spacing:0.5px; margin-top:24px;">🛫 KEBERANGKATAN / DEPARTURE</label>
+        <div id="departures" class="airline-list"></div>
+        <button class="btn secondary btn-small" id="addDeparture" style="margin-top:10px; border-style:dashed;">+ Tambah Baris</button>
+      </div>
+
+      <details>
+        <summary>🎨 Kustomisasi Teks & Warna</summary>
+        <div class="details-content">
+          <label>Teks Operating Hours</label>
+          <input id="hoursText" type="text" value="Operating Hours 06.00 - 18.00 WIB" />
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
+            <div>
+              <label>Size Tanggal</label>
+              <input id="sizeDate" type="range" min="20" max="80" value="40" style="width:100%">
+            </div>
+            <div>
+              <label>Size Baris</label>
+              <input id="sizeRow" type="range" min="15" max="60" value="30" style="width:100%">
+            </div>
+          </div>
+
+          <label style="margin-top:16px;">Warna Global (Teks & Garis)</label>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input id="allTextColor" type="color" value="#ffffff" style="height:40px; width:60px; padding:0; border:none; border-radius:6px; cursor:pointer;">
+            <input id="allTextHex" type="text" value="#ffffff" placeholder="#FFFFFF" style="flex:1;">
           </div>
           
-          <label>Warna Jam Ops (Override)</label>
-          <input id="hoursColor" type="color" value="#ffffff" style="width:100%; height:30px;">
+          <div style="margin-top:16px; display:flex; align-items:center; gap:8px;">
+            <input id="showIndicators" type="checkbox" checked style="width:auto; transform:scale(1.2);">
+            <label for="showIndicators" style="margin:0; font-weight:400;">Tampilkan Garis Bantu (Grid)</label>
+          </div>
         </div>
+      </details>
 
-        <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
-          <input id="showIndicators" type="checkbox" checked style="width:auto; margin:0;">
-          <label for="showIndicators" style="margin:0; font-weight:400; font-size:12px;">Tampilkan Garis Bantu (Grid)</label>
-        </div>
-      </div>
-    </details>
+      <div style="height:100px;"></div> </div>
 
-    <div style="margin-top: auto; padding-top: 20px;">
-      <button class="btn" id="renderBtn" style="background:#10b981; color:#fff; margin-bottom:12px;">
-        🔄 Render Ulang Poster
+    <div style="padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border);">
+      <button class="btn" id="renderBtn" style="background:#10b981; color:#fff; margin-bottom:12px; box-shadow:0 4px 12px rgba(16, 185, 129, 0.3);">
+        🔄 Refresh Poster
       </button>
       
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="btn secondary" id="savePng">
-          💾 Simpan PNG
-        </button>
-        <button class="btn secondary" id="savePdf">
-          📄 Simpan PDF
-        </button>
+        <button class="btn secondary" id="savePng">💾 PNG</button>
+        <button class="btn secondary" id="savePdf">📄 PDF</button>
       </div>
-      
-      <p class="helper-text" style="text-align:center; margin-top:12px;">
-        Tips: Shift + Drag logo untuk resize. Tekan 'G' untuk hide grid.
-      </p>
     </div>
   </aside>
 
@@ -247,6 +312,6 @@
     <canvas id="poster" width="1080" height="1920" aria-label="Preview poster"></canvas>
   </main>
 
-  <script src="jadwal.js?v=15"></script>
+  <script src="jadwal.js?v=16"></script>
 </body>
 </html>
