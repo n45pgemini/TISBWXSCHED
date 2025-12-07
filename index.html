@@ -94,36 +94,69 @@
       border: 1px solid var(--border);
       background: var(--input-bg); color: #fff;
       font-size: 13px; font-family: inherit;
+      transition: border-color 0.2s, background 0.2s;
     }
     input:focus, select:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); }
 
     /* Range Slider */
     input[type="range"] { width: 100%; margin: 4px 0; }
 
-    /* Button Styling */
+    /* Button Styling & Interactivity */
     .btn {
       background: var(--accent); color: var(--fab-text); 
       border: none; padding: 12px; border-radius: 8px;
       cursor: pointer; width: 100%; font-weight: 700; font-size: 13px;
-      transition: transform 0.2s; margin-top: 8px;
+      margin-top: 8px;
       display: flex; justify-content: center; align-items: center; gap: 8px;
+      /* Efek Transisi */
+      transition: all 0.2s ease;
+      position: relative; overflow: hidden;
     }
-    .btn:active { transform: scale(0.98); }
+    
+    /* Hover Effect: Sedikit naik & bersinar */
+    .btn:hover { 
+      filter: brightness(1.1); 
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+    
+    /* Active Effect: Membal saat ditekan */
+    .btn:active { 
+      transform: translateY(0) scale(0.98); 
+      box-shadow: none;
+    }
+
     .btn.secondary { background: #334155; color: #e5e7eb; }
-    .btn.secondary:hover { background: #475569; }
+    .btn.secondary:hover { background: #475569; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
 
     .small { font-size: 11px; color: #94a3b8; display: block; margin-top: 4px; }
     .small-divider { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
     .section-title { margin-top: 18px; font-weight: 700; color: #38bdf8; font-size: 13px; text-transform: uppercase; }
 
-    /* Airline List */
-    .airline-list { display: flex; flex-direction: column; gap: 6px; }
+    /* ===== AIRLINE LIST (MODIFIED LAYOUT) ===== */
+    .airline-list { display: flex; flex-direction: column; gap: 8px; }
+    
     .airline-row { 
-      display: grid; grid-template-columns: repeat(4, 1fr) 34px; 
-      gap: 6px; align-items: center; margin-bottom: 4px;
+      display: grid; 
+      /* PERBAIKAN GRID: Kolom 1 & 3 (Maskapai & Kota) lebih lebar (1.4fr) dari kolom lain */
+      grid-template-columns: 1.4fr 0.9fr 1.4fr 0.9fr 30px; 
+      gap: 4px; 
+      align-items: center; 
     }
-    .airline-row input { padding: 8px; font-size: 11px; }
-    .airline-row button { background: #ef4444; margin-top: 0; padding: 0; height: 34px; border-radius: 6px; }
+    
+    .airline-row input { 
+      /* Padding diperkecil sedikit agar muat lebih banyak teks */
+      padding: 8px 6px; 
+      font-size: 11px; 
+      text-overflow: ellipsis; /* Titik-titik jika kepanjangan */
+      min-width: 0; /* Mencegah input 'meluber' keluar grid */
+    }
+    
+    .airline-row button { 
+      background: #ef4444; margin-top: 0; padding: 0; height: 32px; border-radius: 6px; 
+      transition: all 0.2s;
+    }
+    .airline-row button:hover { background: #dc2626; transform: scale(1.05); }
 
     /* Accordion untuk setting advanced */
     details {
@@ -133,7 +166,9 @@
     details summary {
       padding: 10px; cursor: pointer; font-weight: 600; font-size: 12px;
       list-style: none; display: flex; justify-content: space-between; align-items: center;
+      transition: background 0.2s;
     }
+    details summary:hover { background: rgba(255,255,255,0.05); }
     details summary::after { content: '+'; font-weight: 800; color: var(--accent); }
     details[open] summary::after { content: '−'; }
     .details-content { padding: 12px; border-top: 1px solid var(--border); }
@@ -147,25 +182,18 @@
       background: var(--fab-bg); 
       color: var(--fab-text);
       border: none; 
-      
-      /* Membuat tombol bulat */
       border-radius: 50%; 
-      width: 56px; 
-      height: 56px;
+      width: 56px; height: 56px;
       padding: 0;
       
       font-weight: 700; cursor: pointer; 
       box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-      
-      /* Flex center agar icon di tengah */
       display: flex; justify-content: center; align-items: center;
       transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     
     #togglePanel:hover { transform: scale(1.1); box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4); }
     #togglePanel:active { transform: scale(0.9); }
-    
-    /* Ukuran Icon */
     #togglePanel svg { width: 26px; height: 26px; stroke-width: 2.5; }
 
     /* Mobile Responsive */
@@ -182,7 +210,6 @@
       .airline-row input { flex: 1 1 40%; min-width: 70px; }
       .airline-row button { flex: 0 0 100%; margin-top: 4px; }
 
-      /* Penyesuaian posisi FAB di mobile */
       #togglePanel { bottom: 20px; right: 20px; width: 50px; height: 50px; }
       #togglePanel svg { width: 24px; height: 24px; }
     }
