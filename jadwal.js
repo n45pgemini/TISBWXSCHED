@@ -1,8 +1,5 @@
 /******************************************************************
- * jadwal.js — v20 (Toggle Lock Feature)
- * - Added Locking Mechanism (Toggle Lock/Unlock)
- * - Dragging is disabled when Locked
- * - Settings are saved when Locking
+ * jadwal.js — v21 (Restore Drag Functionality + Toggle Lock)
  ******************************************************************/
 
 // ===== Basis koordinat
@@ -36,7 +33,7 @@ const elShowInd    = document.getElementById('showIndicators');
 const btnToggle    = document.getElementById('togglePanel');
 const btnLock      = document.getElementById('lockSettings');
 
-// State Pengunci (Lock)
+// State Pengunci
 let isLocked = false; 
 
 // Date Dropdowns
@@ -83,7 +80,6 @@ function injectColorPresets() {
         };
         container.appendChild(btn);
     });
-    
     elAllTextHex.parentNode.appendChild(container);
 }
 setTimeout(injectColorPresets, 100);
@@ -113,7 +109,7 @@ function loadConfig() {
 // Update Tampilan Tombol Kunci
 function updateLockUI() {
   if (isLocked) {
-    btnLock.innerHTML = "🔒 Posisi Terkunci (Klik untuk Buka)";
+    btnLock.innerHTML = "🔒 Posisi Terkunci (Klik Buka)";
     btnLock.style.background = "#ef4444"; // Merah
     btnLock.style.color = "#ffffff";
     btnLock.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.4)";
@@ -127,12 +123,11 @@ function updateLockUI() {
 
 // Listener Tombol Kunci (Toggle)
 btnLock?.addEventListener('click', () => {
-  // Toggle status
-  isLocked = !isLocked;
+  isLocked = !isLocked; // Toggle status
   updateLockUI();
 
   if (isLocked) {
-    // Jika dikunci, simpan pengaturan
+    // Simpan saat dikunci
     const config = {
       sizeDate: elSizeDate?.value || 40,
       sizeRow: elSizeRow?.value || 30,
@@ -318,7 +313,6 @@ function renderRowEditors(){
       const box=document.createElement('div');
       box.className='airline-row';
       
-      // Structure: Inputs First -> Button -> Logo Controls
       box.innerHTML=`
         <input placeholder="Maskapai" value="${row.airline||''}" data-k="airline">
         <input placeholder="No Flight" value="${row.flight||''}" data-k="flight">
@@ -454,7 +448,6 @@ async function render(){
         
         ctx.drawImage(drawObj,x,y,W,H);
         
-        // Visualisasi Grid untuk Logo
         if(showGuides){
            ctx.save(); 
            ctx.shadowColor='transparent'; 
@@ -472,7 +465,6 @@ async function render(){
     ctx.font=p.font; ctx.fillStyle=p.color; ctx.textAlign=p.align; ctx.textBaseline='alphabetic';
     ctx.fillText(txt, p.x, p.y);
     
-    // Visualisasi Grid untuk Teks
     if(showGuides){
        const w = ctx.measureText(txt).width;
        let x0=p.x; if(p.align==='center') x0-=w/2; else if(p.align==='right') x0-=w;
@@ -487,14 +479,28 @@ async function render(){
   }
 }
 
-let dragging=null;
-const getRect = async (it) => { 
+async function getRectForItem(it){
   const p = getPos(it.id);
-  ctx.save(); ctx.font=p.font; 
-  const w = ctx.measureText(it.getText()).width; ctx.restore();
-  let x=p.x; if(p.align==='center') x-=w/2; else if(p.align==='right') x-=w;
-  return {x, y:p.y-p.h, w, h:p.h};
-};
+  if(it.kind==='airline'){
+    const file = airlineLogo(it.getText());
+    const S = sizes();
+    const scale = getLogoScale(it.id);
+    const H = Math.max(10, S.logoBaseH * scale);
+    if(file){
+      const img=await getImg(file);
+      const W = H * (img.width/img.height);
+      let x0=p.x; if(p.align==='center') x0-=W/2; else if(p.align==='right') x0-=W;
+      const y0=p.y - H/2;
+      return { x:x0, y:y0, w:W, h:H };
+    }
+  }
+  ctx.save(); ctx.font=p.font;
+  const w=Math.max(10, ctx.measureText(it.getText()).width);
+  ctx.restore();
+  let x0=p.x; if(p.align==='center') x0-=w/2; else if(p.align==='right') x0-=w;
+  const y0=p.y - p.h + 6;
+  return { x:x0, y:y0, w, h:p.h+8 };
+}
 
 function pointer(e){
   const r = c.getBoundingClientRect();
@@ -502,63 +508,71 @@ function pointer(e){
   return { x: (cx-r.left)*(BASE_W/r.width), y: (cy-r.top)*(BASE_H/r.height) };
 }
 
-c.addEventListener('mousedown', async e => {
-  // === CEK KUNCI ===
-  if(isLocked) return;
+// ===== DRAG & DROP ENGINE (RESTORED v16 + LOCK) =====
+let dragging=null;
+let resizingLogo=null; 
+
+async function onDown(e){
+  if(isLocked) return; // Prevent drag if locked
 
   const p = pointer(e);
   for(let i=items.length-1;i>=0;i--){
     const it=items[i];
-    const r=await getRectForItem(it);
-    if(p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
-      const pos=getPos(it.id);
-      dragging={ id:it.id, offX: pos.x-p.x, offY: pos.y-p.y };
-      return;
-    }
+    try {
+      const r=await getRectForItem(it);
+      if(p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
+        const pos=getPos(it.id);
+        
+        // Cek shift key / multitouch untuk resize logo
+        if (it.kind==='airline' && (e.shiftKey || (e.touches && e.touches.length===2))) {
+          const cur = getLogoScale(it.id);
+          resizingLogo = { id: it.id, startY: p.y, startScale: cur };
+        } else {
+          dragging={ id:it.id, offX: pos.x-p.x, offY: pos.y-p.y };
+        }
+        e.preventDefault(); 
+        return;
+      }
+    } catch(err){}
   }
-});
+}
 
-c.addEventListener('touchstart', async e => {
-  // === CEK KUNCI MOBILE ===
+function onMove(e){
   if(isLocked) return;
+
+  const p=pointer(e);
   
-  if(e.touches.length > 1) return; // ignore multitouch gestures
-  const p = pointer(e);
-  for(let i=items.length-1;i>=0;i--){
-    const it=items[i];
-    const r=await getRectForItem(it);
-    if(p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
-      const pos=getPos(it.id);
-      dragging={ id:it.id, offX: pos.x-p.x, offY: pos.y-p.y };
-      e.preventDefault(); // prevent scrolling
-      return;
-    }
+  if(resizingLogo){
+    e.preventDefault();
+    const dy = (p.y - resizingLogo.startY);
+    const newScale = Math.max(0.1, Math.min(3.0, resizingLogo.startScale * (1 + dy/240)));
+    setLogoScale(resizingLogo.id, newScale);
+    render();
+    return;
   }
-}, {passive:false});
+  
+  if(dragging){
+    e.preventDefault();
+    posOverrides[dragging.id]={ x:Math.round(p.x+dragging.offX), y:Math.round(p.y+dragging.offY) };
+    render();
+  }
+}
 
-c.addEventListener('mousemove', e => {
-  if(!dragging) return;
-  const p = pointer(e);
-  posOverrides[dragging.id]={ x:Math.round(p.x+dragging.offX), y:Math.round(p.y+dragging.offY) };
-  render();
-});
+function onUp(){ 
+  if(dragging || resizingLogo) {
+     saveJSON(LS_POS, posOverrides); 
+  }
+  dragging=null; resizingLogo=null; 
+}
 
-c.addEventListener('touchmove', e => {
-  if(!dragging) return;
-  const p = pointer(e);
-  posOverrides[dragging.id]={ x:Math.round(p.x+dragging.offX), y:Math.round(p.y+dragging.offY) };
-  render();
-  e.preventDefault();
-}, {passive:false});
+// Event Bindings (Restored)
+c.addEventListener('mousedown', onDown);
+window.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onUp);
 
-window.addEventListener('mouseup', ()=>{
-  if(dragging) saveJSON(LS_POS, posOverrides);
-  dragging=null;
-});
-window.addEventListener('touchend', ()=>{
-  if(dragging) saveJSON(LS_POS, posOverrides);
-  dragging=null;
-});
+c.addEventListener('touchstart', onDown, {passive:false});
+window.addEventListener('touchmove', onMove, {passive:false});
+window.addEventListener('touchend', onUp);
 
 elBgSelect?.addEventListener('change', render);
 elBgInput?.addEventListener('change', e => {
@@ -586,6 +600,6 @@ document.getElementById('savePdf')?.addEventListener('click', async ()=>{
 
 // INITIAL LOAD
 loadConfig();
-updateLockUI(); // Set UI Button
+updateLockUI();
 renderRowEditors();
 render();
