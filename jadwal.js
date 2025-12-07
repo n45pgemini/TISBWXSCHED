@@ -1,5 +1,5 @@
 /******************************************************************
- * jadwal.js — v18 (Restored Presets & Desktop Layout Fix)
+ * jadwal.js — v19 (Restored Grid/Labels & Desktop Layout)
  ******************************************************************/
 
 // ===== Basis koordinat
@@ -18,7 +18,7 @@ function applyDPR() {
 applyDPR();
 window.addEventListener('resize', () => { applyDPR(); render(); });
 
-// ===== Controls References
+// ===== Controls
 const elDate       = document.getElementById('dateText');
 const elHours      = document.getElementById('hoursText');
 const elSizeDate   = document.getElementById('sizeDate');
@@ -26,7 +26,7 @@ const elSizeRow    = document.getElementById('sizeRow');
 const elSizeHours  = document.getElementById('sizeHours');
 const elHoursCol   = document.getElementById('hoursColor');
 const elAllTextColor = document.getElementById('allTextColor');
-const elAllTextHex   = document.getElementById('allTextHex'); // Pastikan ini ada di HTML
+const elAllTextHex   = document.getElementById('allTextHex');
 const elBgSelect   = document.getElementById('bgSelect');
 const elBgInput    = document.getElementById('bgInput');
 const elShowInd    = document.getElementById('showIndicators');
@@ -44,10 +44,9 @@ btnToggle?.addEventListener('click', () => {
   document.body.classList.toggle('panel-collapsed');
 });
 
-// ===== INJECT PRESET BUTTONS (FITUR DIKEMBALIKAN) =====
+// ===== INJECT PRESET BUTTONS =====
 function injectColorPresets() {
     if(!elAllTextHex) return;
-    // Cek agar tidak inject double
     if(elAllTextHex.parentNode.querySelector('.preset-container')) return;
 
     const container = document.createElement('div');
@@ -79,10 +78,8 @@ function injectColorPresets() {
         container.appendChild(btn);
     });
     
-    // Masukkan tombol di bawah input HEX
     elAllTextHex.parentNode.appendChild(container);
 }
-// Jalankan injeksi UI
 setTimeout(injectColorPresets, 100);
 
 // ===== FITUR SAVE / LOAD CONFIG =====
@@ -122,10 +119,10 @@ btnLock?.addEventListener('click', () => {
   setTimeout(() => btnLock.innerHTML = oriText, 1500);
 });
 
-// Event Listeners Inputs
 [elSizeDate, elSizeRow, elSizeHours, elHoursCol].forEach(el => {
   if(el) el.addEventListener('input', render);
 });
+elShowInd?.addEventListener('change', ()=>{ showGuides = elShowInd.checked; render(); });
 
 // Sync Hex & Color Input
 elAllTextColor?.addEventListener('input', e => {
@@ -296,7 +293,7 @@ function renderRowEditors(){
       const box=document.createElement('div');
       box.className='airline-row';
       
-      // Structure: Inputs First -> Logo Controls (Full Row) -> Button
+      // Structure: Inputs First -> Button -> Logo Controls
       box.innerHTML=`
         <input placeholder="Maskapai" value="${row.airline||''}" data-k="airline">
         <input placeholder="No Flight" value="${row.flight||''}" data-k="flight">
@@ -356,7 +353,7 @@ function populateDateDropdowns(){
   const now = new Date();
   if(!selDay) return;
   
-  selMonth.innerHTML = ID_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  selMonth.innerHTML = ID_MONTHS.map((m,i)=>`<option value="${m.idx}">${m.label}</option>`).join('');
   selYear.innerHTML = [now.getFullYear(), now.getFullYear()+1].map(y=>`<option value="${y}">${y}</option>`).join('');
   
   const refreshDays = () => {
@@ -431,8 +428,17 @@ async function render(){
         if(state.globalColor && state.globalColor.toLowerCase() !== '#ffffff') drawObj = tintImage(img, state.globalColor);
         
         ctx.drawImage(drawObj,x,y,W,H);
+        
+        // Restore Grid Box + ID Label
         if(showGuides){
-           ctx.save(); ctx.shadowColor='transparent'; ctx.strokeStyle='#00ffff88'; ctx.strokeRect(x,y,W,H); ctx.restore();
+           ctx.save(); 
+           ctx.shadowColor='transparent'; 
+           ctx.strokeStyle='#00ffff88'; ctx.lineWidth=2; 
+           ctx.strokeRect(x,y,W,H); 
+           // Kembalikan teks ID
+           ctx.fillStyle='#00ffff'; ctx.font='700 16px Montserrat, system-ui'; ctx.textAlign='left';
+           ctx.fillText(`${it.id}`, x, Math.max(16,y-6));
+           ctx.restore();
         }
         continue;
       }
@@ -441,10 +447,17 @@ async function render(){
     ctx.save();
     ctx.font=p.font; ctx.fillStyle=p.color; ctx.textAlign=p.align; ctx.textBaseline='alphabetic';
     ctx.fillText(txt, p.x, p.y);
+    
+    // Restore Grid Box + ID Label untuk Teks
     if(showGuides){
        const w = ctx.measureText(txt).width;
        let x0=p.x; if(p.align==='center') x0-=w/2; else if(p.align==='right') x0-=w;
-       ctx.shadowColor='transparent'; ctx.strokeStyle='#00ffff88'; ctx.strokeRect(x0, p.y-p.h+6, w, p.h+8);
+       ctx.shadowColor='transparent'; 
+       ctx.strokeStyle='#00ffff88'; ctx.lineWidth=2; 
+       ctx.strokeRect(x0, p.y-p.h+6, w, p.h+8);
+       
+       ctx.fillStyle='#00ffff'; ctx.font='700 16px Montserrat, system-ui'; ctx.textAlign='left';
+       ctx.fillText(`${it.id}`, x0, Math.max(16, p.y-p.h));
     }
     ctx.restore();
   }
