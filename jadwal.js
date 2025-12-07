@@ -1,16 +1,11 @@
 /******************************************************************
- * jadwal.js — v16 (Shadows, Logo Tinting & Gold Presets)
- * - Added Drop Shadow to Text, Lines, and Logos
- * - Added Logo Tinting (Logo color follows text color)
- * - Added Preset Buttons for Gold Colors
- * - Line separators follow global color
+ * jadwal.js — v17 (Number Inputs, Save Config & Logo Input Fix)
  ******************************************************************/
 
 // ===== Basis koordinat
 const BASE_W = 1080;
 const BASE_H = 1920;
 
-// ===== Canvas & DPR
 const c = document.getElementById('poster');
 const ctx = c.getContext('2d');
 
@@ -23,23 +18,22 @@ function applyDPR() {
 applyDPR();
 window.addEventListener('resize', () => { applyDPR(); render(); });
 
-// ===== Controls
+// ===== Controls References
 const elDate       = document.getElementById('dateText');
 const elHours      = document.getElementById('hoursText');
 const elSizeDate   = document.getElementById('sizeDate');
 const elSizeRow    = document.getElementById('sizeRow');
 const elSizeHours  = document.getElementById('sizeHours');
 const elHoursCol   = document.getElementById('hoursColor');
+const elAllTextColor = document.getElementById('allTextColor');
+const elAllTextHex   = document.getElementById('allTextHex');
 const elBgSelect   = document.getElementById('bgSelect');
 const elBgInput    = document.getElementById('bgInput');
 const elShowInd    = document.getElementById('showIndicators');
 const btnToggle    = document.getElementById('togglePanel');
+const btnLock      = document.getElementById('lockSettings'); // Tombol Baru
 
-// Controls Warna Global
-const elAllTextColor = document.getElementById('allTextColor');
-const elAllTextHex   = document.getElementById('allTextHex');
-
-// Date dropdown controls
+// Date Dropdowns
 const selDay    = document.getElementById('selDay');
 const selMonth  = document.getElementById('selMonth');
 const selYear   = document.getElementById('selYear');
@@ -48,76 +42,65 @@ const btnDateGo = document.getElementById('applyDateSmall');
 // Toggle panel
 btnToggle?.addEventListener('click', () => {
   document.body.classList.toggle('panel-collapsed');
-  const span = btnToggle.querySelector('span');
-  span.textContent = document.body.classList.contains('panel-collapsed') ? 'Tampilkan Panel' : 'Sembunyikan Panel';
 });
 
-// Default slider
-if (!elSizeDate.value)  elSizeDate.value  = 40;
-if (!elSizeRow.value)   elSizeRow.value   = 30;
-if (!elSizeHours.value) elSizeHours.value = 35;
-['sizeDate','sizeRow','sizeHours'].forEach(id=>{
-  const el=document.getElementById(id), out=document.getElementById(id+'Val');
-  if (el && out) { out.textContent = el.value; el.addEventListener('input', ()=>{ out.textContent=el.value; render(); }); }
+// ===== FITUR SAVE / LOAD CONFIG (New) =====
+const LS_CONFIG = 'fs_config_v1';
+
+function loadConfig() {
+  const saved = localStorage.getItem(LS_CONFIG);
+  if(saved){
+    try {
+      const cfg = JSON.parse(saved);
+      if(cfg.sizeDate && elSizeDate) elSizeDate.value = cfg.sizeDate;
+      if(cfg.sizeRow && elSizeRow) elSizeRow.value = cfg.sizeRow;
+      if(cfg.sizeHours && elSizeHours) elSizeHours.value = cfg.sizeHours;
+      if(cfg.hoursColor && elHoursCol) elHoursCol.value = cfg.hoursColor;
+      if(cfg.globalColor) {
+         if(elAllTextColor) elAllTextColor.value = cfg.globalColor;
+         if(elAllTextHex) elAllTextHex.value = cfg.globalColor;
+         state.globalColor = cfg.globalColor; // Update state internal
+      }
+    } catch(e) { console.error('Gagal load config', e); }
+  }
+}
+
+// Listener Tombol Kunci
+btnLock?.addEventListener('click', () => {
+  const config = {
+    sizeDate: elSizeDate?.value || 40,
+    sizeRow: elSizeRow?.value || 30,
+    sizeHours: elSizeHours?.value || 35,
+    hoursColor: elHoursCol?.value || '#ffffff',
+    globalColor: state.globalColor || '#ffffff'
+  };
+  localStorage.setItem(LS_CONFIG, JSON.stringify(config));
+  
+  // Efek visual tombol berkedip
+  const oriText = btnLock.textContent;
+  btnLock.textContent = "✅ Tersimpan!";
+  setTimeout(() => btnLock.textContent = oriText, 1500);
 });
-elHoursCol?.addEventListener('input', render);
+
+// Event Listeners untuk Input Angka (Live Render)
+[elSizeDate, elSizeRow, elSizeHours, elHoursCol, elAllTextColor].forEach(el => {
+  el?.addEventListener('input', render);
+});
 elShowInd?.addEventListener('change', ()=>{ showGuides = elShowInd.checked; render(); });
 
-// ===== INJECT PRESET BUTTONS (Warna Emas) =====
-function injectColorPresets() {
-    if(!elAllTextHex) return;
-    const container = document.createElement('div');
-    container.style.marginTop = '8px';
-    container.style.display = 'flex';
-    container.style.gap = '6px';
-    container.style.flexWrap = 'wrap';
 
-    const colors = ['#FFFFFF', '#FCEA94', '#ECD881', '#EAB476'];
-    
-    colors.forEach(col => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.style.width = '24px';
-        btn.style.height = '24px';
-        btn.style.borderRadius = '50%';
-        btn.style.border = '2px solid #334155';
-        btn.style.backgroundColor = col;
-        btn.style.cursor = 'pointer';
-        btn.title = col;
-        
-        btn.onclick = () => {
-            if(elAllTextColor) elAllTextColor.value = col;
-            if(elAllTextHex) elAllTextHex.value = col;
-            applyGlobalTextColor(col);
-        };
-        container.appendChild(btn);
-    });
-    
-    // Insert after the hex input
-    elAllTextHex.parentNode.parentNode.insertBefore(container, elAllTextHex.parentNode.nextSibling);
-}
-// Jalankan injeksi UI
-setTimeout(injectColorPresets, 100);
-
-
-// ===== Assets
+// ===== Assets & Data
 const ASSETS = {
   bg:  'bahan_flyer_bwx.png',
-  bg2: 'bahan_flyer_bwx2.png',
-  bg3: 'bahan_flyer_bwx3.png',
-  tema1: 'bahan_flyer_bwx_tema1.png',
-  tema2: 'bahan_flyer_bwx_tema2.png',
-
   super: 'super_air_jet_logo.png',
   wings: 'wings_logo.png',
   batik: 'batik_logo.png',
   citilink: 'citilink_logo.png'
 };
 
-// ===== Data
 const state = {
   bgURL: ASSETS.bg,
-  globalColor: '#ffffff', // Default putih
+  globalColor: '#ffffff',
   arrivals: [
     { airline:'SUPER AIR JET', flight:'IU 370', city:'JAKARTA',  time:'10:15 WIB' },
     { airline:'WINGS AIR',     flight:'IW 1880', city:'SURABAYA', time:'12:40 WIB' }
@@ -128,67 +111,56 @@ const state = {
   ]
 };
 
-// ===== Posisi default
+// ===== Posisi Default
 const POS_DEFAULT = {
-  date       : { x:531, y:509,  align:'center', color:'#ffffff', h:48 },
-
-  // ARR
+  date: { x:531, y:509, align:'center', color:'#ffffff', h:48 },
+  hours: { x:702, y:1384, align:'center', color:'#ffffff', h:44 },
+  // Arrivals
   arr_0_airline:{ x:57,  y:676, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   arr_0_flight :{ x:366, y:689, align:'left',  color:'#ffffff', h:40 },
   arr_0_city   :{ x:630, y:689, align:'left',  color:'#ffffff', h:40 },
   arr_0_time   :{ x:1020,y:689, align:'right', color:'#ffffff', h:40 },
-
   arr_1_airline:{ x:57,  y:746, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   arr_1_flight :{ x:354, y:759, align:'left',  color:'#ffffff', h:40 },
   arr_1_city   :{ x:621, y:759, align:'left',  color:'#ffffff', h:40 },
   arr_1_time   :{ x:1017,y:759, align:'right', color:'#ffffff', h:40 },
-
   arr_2_airline:{ x:57,  y:831, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   arr_2_flight :{ x:363, y:844, align:'left',  color:'#ffffff', h:40 },
   arr_2_city   :{ x:603, y:844, align:'left',  color:'#ffffff', h:40 },
   arr_2_time   :{ x:1020,y:844, align:'right', color:'#ffffff', h:40 },
-
-  // DEP
+  // Departures
   dep_0_airline:{ x:57,  y:1071, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   dep_0_flight :{ x:366, y:1084, align:'left',  color:'#ffffff', h:40 },
   dep_0_city   :{ x:630, y:1084, align:'left',  color:'#ffffff', h:40 },
   dep_0_time   :{ x:1020,y:1084, align:'right', color:'#ffffff', h:40 },
-
   dep_1_airline:{ x:57,  y:1146, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   dep_1_flight :{ x:354, y:1159, align:'left',  color:'#ffffff', h:40 },
   dep_1_city   :{ x:621, y:1159, align:'left',  color:'#ffffff', h:40 },
   dep_1_time   :{ x:1017,y:1159, align:'right', color:'#ffffff', h:40 },
-
   dep_2_airline:{ x:57,  y:1221, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   dep_2_flight :{ x:363, y:1234, align:'left',  color:'#ffffff', h:40 },
   dep_2_city   :{ x:603, y:1234, align:'left',  color:'#ffffff', h:40 },
-  dep_2_time   :{ x:1020,y:1234, align:'right', color:'#ffffff', h:40 },
-
-  hours         : { x:702, y:1384, align:'center', color:'#ffffff', h:44 }
+  dep_2_time   :{ x:1020,y:1234, align:'right', color:'#ffffff', h:40 }
 };
 
 const LS_POS   = 'fs_positions_v12';
 const LS_LOGO  = 'fs_logo_scales_v4';
 
 let items = [];
-let posOverrides   = loadJSON(LS_POS,  {});
-let logoScaleMap   = loadJSON(LS_LOGO, {});
+let posOverrides = loadJSON(LS_POS, {});
+let logoScaleMap = loadJSON(LS_LOGO, {});
 let showGuides = true;
 
 function loadJSON(key, def){ try{ return JSON.parse(localStorage.getItem(key)||JSON.stringify(def)); }catch{ return def; } }
 function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
 
-// ===== LOGIC GANTI WARNA GLOBAL =====
 function applyGlobalTextColor(color){
-  state.globalColor = color; // Simpan state warna garis
+  state.globalColor = color;
   Object.keys(POS_DEFAULT).forEach(id=>{
-    if(id !== 'hours'){ // Kecuali hours yang punya kontrol sendiri
-      POS_DEFAULT[id].color = color;
-    }
+    if(id !== 'hours') POS_DEFAULT[id].color = color;
   });
   render();
 }
-
 elAllTextColor?.addEventListener('input', e => {
   if(elAllTextHex) elAllTextHex.value = e.target.value;
   applyGlobalTextColor(e.target.value);
@@ -227,30 +199,28 @@ function sizes(){
     logoBaseH : 34
   };
 }
-function getLogoScale(id){ return Math.max(0.4, Math.min(2.5, +(logoScaleMap[id] ?? 1.0))); }
-function setLogoScale(id, val){ logoScaleMap[id] = Math.max(0.4, Math.min(2.5, +val)); saveJSON(LS_LOGO, logoScaleMap); }
+function getLogoScale(id){ return +(logoScaleMap[id] ?? 1.0); }
+function setLogoScale(id, val){ logoScaleMap[id] = Math.max(0.1, +val); saveJSON(LS_LOGO, logoScaleMap); }
 
 function buildItems(){
   items=[];
   items.push({ id:'date', kind:'text', getText:()=> (elDate?.value||'').toUpperCase() });
-
   const keys=['airline','flight','city','time'];
-  for(let i=0;i<3;i++){
-    keys.forEach(k=>{
-      items.push({ id:`arr_${i}_${k}`, kind:k==='airline'?'airline':'text', getText:()=> (state.arrivals[i]?.[k]||'').toUpperCase() });
+  ['arrivals','departures'].forEach((sec, sIdx)=>{
+    const prefix = (sec==='arrivals')?'arr':'dep';
+    state[sec].forEach((row, rIdx)=>{
+      keys.forEach(k=>{
+        items.push({ id:`${prefix}_${rIdx}_${k}`, kind:k==='airline'?'airline':'text', getText:()=> (row[k]||'').toUpperCase() });
+      });
     });
-  }
-  for(let i=0;i<3;i++){
-    keys.forEach(k=>{
-      items.push({ id:`dep_${i}_${k}`, kind:k==='airline'?'airline':'text', getText:()=> (state.departures[i]?.[k]||'').toUpperCase() });
-    });
-  }
+  });
   items.push({ id:'hours', kind:'text', getText:()=> (elHours?.value||'') });
 }
 buildItems();
 
 function getPos(id){
   const base = POS_DEFAULT[id];
+  if(!base) return {x:0,y:0,align:'left',color:'#fff',font:'',h:20};
   const ov = posOverrides[id];
   const S = sizes();
   let font=S.rowFont, h=S.rowH, color=base.color; 
@@ -259,73 +229,65 @@ function getPos(id){
   return { x: ov?.x ?? base.x, y: ov?.y ?? base.y, align: base.align, color, font, h, _airline: base?.kind==='airline' };
 }
 
-// image cache
-const IMG={};
-function loadImage(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
-async function getImg(src){ if(!src) return null; if(!IMG[src]) IMG[src]=await loadImage(src); return IMG[src]; }
-
-// UI Rows Editors
+// ===== RENDER ROW EDITORS (Updated: Number Input for Logo) =====
 const arrivalsWrap    = document.getElementById('arrivals');
 const departuresWrap  = document.getElementById('departures');
 
-function miniLogoControls(id){
-  const scale = getLogoScale(id).toFixed(2);
-  return `
-    <div class="logo-controls" style="grid-column:1/-1;display:flex;align-items:center;gap:8px;margin-top:4px;">
-      <small style="opacity:.8;">Logo Size:</small>
-      <button type="button" data-act="minus" data-id="${id}" style="padding:4px 10px;border-radius:6px;border:none;background:#334155;color:#fff;font-weight:800;">−</button>
-      <button type="button" data-act="plus"  data-id="${id}" style="padding:4px 10px;border-radius:6px;border:none;background:#334155;color:#fff;font-weight:800;">+</button>
-      <span data-act="read"  data-id="${id}" style="min-width:44px;text-align:right;font-variant-numeric:tabular-nums;">${scale}</span>
-    </div>
-  `;
-}
-
 function renderRowEditors(){
   const build = (wrap, listName) => {
-    const data = state[listName];
     wrap.innerHTML='';
-    data.forEach((row, idx)=>{
+    state[listName].forEach((row, idx)=>{
       const isArr = (listName==='arrivals');
       const airlineId = `${isArr ? 'arr':'dep'}_${idx}_airline`;
-      const cityPlaceholder = isArr ? 'Origin' : 'Destination';
-
+      const scale = getLogoScale(airlineId).toFixed(2);
+      
       const box=document.createElement('div');
       box.className='airline-row';
+      
+      // Update HTML Structure: Input Logo Angka
       box.innerHTML=`
-        <input placeholder="Airlines" value="${row.airline||''}" data-k="airline">
-        <input placeholder="Flight No" value="${row.flight||''}" data-k="flight">
-        <input placeholder="${cityPlaceholder}" maxlength="10" value="${row.city||''}" data-k="city">
-        <input placeholder="Time" value="${row.time||''}" data-k="time">
+        <input placeholder="Maskapai" value="${row.airline||''}" data-k="airline">
+        <input placeholder="No Flight" value="${row.flight||''}" data-k="flight">
+        <input placeholder="${isArr?'Asal':'Tujuan'}" value="${row.city||''}" data-k="city">
+        <input placeholder="Jam" value="${row.time||''}" data-k="time">
+        
+        <div class="logo-wrapper" style="display:flex; align-items:center; gap:6px;">
+           <small style="color:#64748b; font-size:10px;">Logo:</small>
+           <div class="logo-controls">
+             <input type="number" step="0.1" value="${scale}" class="logo-inp" style="width:50px; text-align:center; padding:4px; border-radius:4px; border:1px solid #334155; background:rgba(0,0,0,0.3); color:#fff;">
+           </div>
+        </div>
+
         <button type="button" title="Hapus">✕</button>
-        ${miniLogoControls(airlineId)}
       `;
 
-      box.querySelectorAll('[data-k]').forEach(inp=>{
-        const k=inp.dataset.k;
-        inp.oninput=()=>{ state[listName][idx][k]=inp.value; render(); };
+      // Binding Input Teks
+      box.querySelectorAll('input[data-k]').forEach(inp=>{
+        inp.oninput=()=>{ state[listName][idx][inp.dataset.k]=inp.value; render(); };
       });
+      
+      // Binding Tombol Hapus
       box.querySelector('button[title="Hapus"]').onclick=()=>{ 
         state[listName].splice(idx,1); buildItems(); renderRowEditors(); render(); 
       };
-      box.querySelectorAll('[data-id="'+airlineId+'"]').forEach(ctrl=>{
-        ctrl.addEventListener('click', ()=>{
-          const act = ctrl.getAttribute('data-act');
-          const cur = getLogoScale(airlineId);
-          const next = act==='minus' ? Math.max(0.4, cur-0.05) : Math.min(2.5, cur+0.05);
-          setLogoScale(airlineId, next);
-          const read = box.querySelector('[data-act="read"][data-id="'+airlineId+'"]');
-          if(read) read.textContent = next.toFixed(2);
+      
+      // Binding Input Logo (Number)
+      const logoInp = box.querySelector('.logo-inp');
+      if(logoInp){
+        logoInp.addEventListener('input', (e)=>{
+          setLogoScale(airlineId, e.target.value);
           render();
         });
-      });
+      }
+
       wrap.appendChild(box);
     });
   };
   build(arrivalsWrap,'arrivals');
   build(departuresWrap,'departures');
 }
-renderRowEditors();
 
+// Tambah Baris
 document.getElementById('addArrival')?.addEventListener('click', ()=>{
   if(state.arrivals.length>=3) return;
   state.arrivals.push({airline:'',flight:'',city:'',time:''});
@@ -337,126 +299,45 @@ document.getElementById('addDeparture')?.addEventListener('click', ()=>{
   buildItems(); renderRowEditors(); render();
 });
 
-// Date dropdown helper
-const ID_DAYS  = ['MINGGU','SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU'];
+// Image Loader
+const IMG={};
+function loadImage(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
+async function getImg(src){ if(!src) return null; if(!IMG[src]) IMG[src]=await loadImage(src); return IMG[src]; }
+
+// Date Helper
+const ID_DAYS = ['MINGGU','SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU'];
 const ID_MONTHS = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
 
-function daysInMonth(y, mIdx){ return new Date(y, mIdx+1, 0).getDate(); }
-function rotateMonthsFromNow(){
-  const now = new Date();
-  const start = now.getMonth(); 
-  const arr = [];
-  for(let i=0;i<12;i++){
-    const mi = (start + i) % 12;
-    arr.push({ idx: mi, label: ID_MONTHS[mi] });
-  }
-  return arr;
-}
 function populateDateDropdowns(){
-  if(!(selDay && selMonth && selYear && btnDateGo)) return;
-  selMonth.innerHTML = rotateMonthsFromNow().map(m=>`<option value="${m.idx}">${m.label}</option>`).join('');
   const now = new Date();
-  const ys = [now.getFullYear(), now.getFullYear()+1];
-  selYear.innerHTML = ys.map(y=>`<option value="${y}">${y}</option>`).join('');
-  selMonth.selectedIndex = 0; 
-  selYear.value = String(now.getFullYear());
-  refreshDays();
-  selDay.value = String(now.getDate());
+  if(!selDay) return;
+  
+  selMonth.innerHTML = ID_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  selYear.innerHTML = [now.getFullYear(), now.getFullYear()+1].map(y=>`<option value="${y}">${y}</option>`).join('');
+  
+  const refreshDays = () => {
+     const y = +selYear.value, m = +selMonth.value;
+     const max = new Date(y, m+1, 0).getDate();
+     selDay.innerHTML = Array.from({length:max},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
+  };
+  
+  selMonth.onchange = refreshDays; selYear.onchange = refreshDays;
+  selMonth.value = now.getMonth(); selYear.value = now.getFullYear(); refreshDays(); selDay.value = now.getDate();
 
-  selMonth.addEventListener('change', refreshDays);
-  selYear.addEventListener('change', refreshDays);
-  btnDateGo.addEventListener('click', applyDateFromDropdown);
-}
-function refreshDays(){
-  const mIdx = +selMonth.value; 
-  const y    = +selYear.value;
-  const maxD = daysInMonth(y, mIdx);
-  const prev = +selDay.value || 1;
-  selDay.innerHTML = Array.from({length:maxD}, (_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
-  selDay.value = String(Math.min(prev, maxD));
-}
-function applyDateFromDropdown(){
-  const d = +selDay.value;
-  const mIdx = +selMonth.value; 
-  const y = +selYear.value;
-  const jsDate = new Date(y, mIdx, d);
-  const dayName = ID_DAYS[jsDate.getDay()];
-  const monthName = ID_MONTHS[mIdx];
-  const text = `${dayName}, ${String(d).padStart(2,'0')} ${monthName} ${y}`;
-  if(elDate){ elDate.value = text; }
-  render();
+  btnDateGo.onclick = () => {
+     const d = new Date(+selYear.value, +selMonth.value, +selDay.value);
+     elDate.value = `${ID_DAYS[d.getDay()]}, ${String(d.getDate()).padStart(2,'0')} ${ID_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+     render();
+  };
 }
 populateDateDropdowns();
 
-async function getRectForItem(it){
-  const p = getPos(it.id);
-  if(it.kind==='airline'){
-    const file = airlineLogo(it.getText());
-    const S = sizes();
-    const scale = getLogoScale(it.id);
-    const H = Math.max(10, S.logoBaseH * scale);
-    if(file){
-      const img=await getImg(file);
-      const W = H * (img.width/img.height);
-      let x0=p.x; if(p.align==='center') x0-=W/2; else if(p.align==='right') x0-=W;
-      const y0=p.y - H/2;
-      return { x:x0, y:y0, w:W, h:H };
-    }
-  }
-  ctx.save(); ctx.font=p.font;
-  const w=Math.max(10, ctx.measureText(it.getText()).width);
-  ctx.restore();
-  let x0=p.x; if(p.align==='center') x0-=w/2; else if(p.align==='right') x0-=w;
-  const y0=p.y - p.h + 6;
-  return { x:x0, y:y0, w, h:p.h+8 };
-}
-
-function tableBounds(section){
-  let left = Infinity, right = -Infinity;
-  for(let i=0;i<3;i++){
-    const a = POS_DEFAULT[`${section}_${i}_airline`] ? getPos(`${section}_${i}_airline`).x : null;
-    const t = POS_DEFAULT[`${section}_${i}_time`]    ? getPos(`${section}_${i}_time`).x    : null;
-    if(a!=null) left  = Math.min(left,  a);
-    if(t!=null) right = Math.max(right, t); 
-  }
-  if(!isFinite(left))  left  = 60;
-  if(!isFinite(right)) right = 1020;
-  left  = Math.max(40,  left  - 0);
-  right = Math.min(1040, right - 0);
-  return { left, right };
-}
-
-function drawRowSeparators(section, count){
-  const bounds = tableBounds(section);
-  ctx.save();
-  // Gunakan state.globalColor, atau default putih
-  ctx.strokeStyle = state.globalColor || 'rgba(255,255,255,0.95)';
-  ctx.lineWidth = 3;
-  // Tambahkan shadow pada garis
-  ctx.shadowColor = 'rgba(0,0,0,0.85)';
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetX = 2;
-  ctx.shadowOffsetY = 2;
-  
-  for(let i=0;i<count;i++){
-    const pos = getPos(`${section}_${i}_time`);
-    const y = pos.y + 22; 
-    ctx.beginPath(); ctx.moveTo(bounds.left, y); ctx.lineTo(bounds.right, y); ctx.stroke();
-  }
-  ctx.restore();
-}
-
-// Helper untuk mewarnai Logo (Tinting)
+// Tint Helper
 function tintImage(img, color) {
-  // Jika warna putih, kembalikan gambar asli
   if(color.toLowerCase() === '#ffffff') return img;
-  
   const buffer = document.createElement('canvas');
-  buffer.width = img.width;
-  buffer.height = img.height;
+  buffer.width = img.width; buffer.height = img.height;
   const bx = buffer.getContext('2d');
-  
-  // Gambar siluet
   bx.drawImage(img, 0, 0);
   bx.globalCompositeOperation = 'source-in';
   bx.fillStyle = color;
@@ -464,24 +345,31 @@ function tintImage(img, color) {
   return buffer;
 }
 
+// Render Loop
 async function render(){
-  if(elBgSelect){ state.bgURL = elBgSelect.value; }
-  
+  if(elBgSelect) state.bgURL = elBgSelect.value;
   const bg = await getImg(state.bgURL);
   ctx.clearRect(0,0,BASE_W,BASE_H);
   if(bg) ctx.drawImage(bg,0,0,BASE_W,BASE_H);
 
-  drawRowSeparators('arr', Math.min(3, state.arrivals.length));
-  drawRowSeparators('dep', Math.min(3, state.departures.length));
+  // Garis Pemisah
+  const drawSep = (sec, count) => {
+     ctx.save();
+     ctx.strokeStyle = state.globalColor || 'rgba(255,255,255,0.95)';
+     ctx.lineWidth = 3; ctx.shadowColor='rgba(0,0,0,0.8)'; ctx.shadowBlur=4;
+     for(let i=0;i<count;i++){
+       const pos = getPos(`${sec}_${i}_time`);
+       const y = pos.y + 22; 
+       ctx.beginPath(); ctx.moveTo(60, y); ctx.lineTo(1020, y); ctx.stroke();
+     }
+     ctx.restore();
+  };
+  drawSep('arr', Math.min(3, state.arrivals.length));
+  drawSep('dep', Math.min(3, state.departures.length));
 
-  // Set Shadow Global untuk teks & logo
-  ctx.shadowColor = 'rgba(0,0,0,0.85)';
-  ctx.shadowBlur = 6;
-  ctx.shadowOffsetX = 3;
-  ctx.shadowOffsetY = 3;
+  ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 6; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 3;
 
-  for(let i=0;i<items.length;i++){
-    const it = items[i];
+  for(const it of items){
     const p = getPos(it.id);
     const txt = it.getText();
 
@@ -493,131 +381,92 @@ async function render(){
         const scale = getLogoScale(it.id);
         const H = Math.max(10, S.logoBaseH * scale);
         const W = H * (img.width/img.height);
-        let x=p.x, y=p.y - H/2; if(p.align==='center') x-=W/2; else if(p.align==='right') x-=W;
+        let x=p.x, y=p.y - H/2; 
+        if(p.align==='center') x-=W/2; else if(p.align==='right') x-=W;
         
-        // Cek apakah perlu di-tint
         let drawObj = img;
-        if(state.globalColor && state.globalColor.toLowerCase() !== '#ffffff'){
-             drawObj = tintImage(img, state.globalColor);
-        }
-
+        if(state.globalColor && state.globalColor.toLowerCase() !== '#ffffff') drawObj = tintImage(img, state.globalColor);
+        
         ctx.drawImage(drawObj,x,y,W,H);
-
         if(showGuides){
-          ctx.save();
-          ctx.shadowColor='transparent'; // Matikan shadow untuk guide
-          ctx.strokeStyle='#00ffff88'; ctx.lineWidth=2; ctx.strokeRect(x,y,W,H);
-          ctx.fillStyle='#00ffff'; ctx.font='700 16px Montserrat, system-ui'; ctx.textAlign='left';
-          ctx.fillText(`${it.id}`, x, Math.max(16,y-6));
-          ctx.restore();
+           ctx.save(); ctx.shadowColor='transparent'; ctx.strokeStyle='#00ffff88'; ctx.strokeRect(x,y,W,H); ctx.restore();
         }
         continue;
       }
     }
 
-    // Teks
     ctx.save();
     ctx.font=p.font; ctx.fillStyle=p.color; ctx.textAlign=p.align; ctx.textBaseline='alphabetic';
     ctx.fillText(txt, p.x, p.y);
-    
     if(showGuides){
-      ctx.shadowColor='transparent';
-      const r = await getRectForItem(it);
-      ctx.lineWidth=2; ctx.strokeStyle='#00ffff88'; ctx.strokeRect(r.x,r.y,r.w,r.h);
-      ctx.fillStyle='#00ffff'; ctx.font='700 16px Montserrat, system-ui'; ctx.textAlign='left';
-      ctx.fillText(`${it.id}`, r.x, Math.max(16,r.y-6));
+       const w = ctx.measureText(txt).width;
+       let x0=p.x; if(p.align==='center') x0-=w/2; else if(p.align==='right') x0-=w;
+       ctx.shadowColor='transparent'; ctx.strokeStyle='#00ffff88'; ctx.strokeRect(x0, p.y-p.h+6, w, p.h+8);
     }
     ctx.restore();
   }
 }
 
+// Drag & Drop
+let dragging=null;
+const getRect = async (it) => { 
+  const p = getPos(it.id);
+  ctx.save(); ctx.font=p.font; 
+  const w = ctx.measureText(it.getText()).width; ctx.restore();
+  let x=p.x; if(p.align==='center') x-=w/2; else if(p.align==='right') x-=w;
+  return {x, y:p.y-p.h, w, h:p.h};
+};
+
 function pointer(e){
   const r = c.getBoundingClientRect();
-  const clientX = (e.touches ? e.touches[0].clientX : e.clientX);
-  const clientY = (e.touches ? e.touches[0].clientY : e.clientY);
-  const x = clientX - r.left;
-  const y = clientY - r.top;
-  const sx = BASE_W / r.width;
-  const sy = BASE_H / r.height;
-  return { x: x * sx, y: y * sy };
+  const cx = (e.touches?e.touches[0].clientX:e.clientX), cy = (e.touches?e.touches[0].clientY:e.clientY);
+  return { x: (cx-r.left)*(BASE_W/r.width), y: (cy-r.top)*(BASE_H/r.height) };
 }
 
-let dragging=null;
-let resizingLogo=null; 
-
-async function onDown(e){
+c.addEventListener('mousedown', async e => {
   const p = pointer(e);
   for(let i=items.length-1;i>=0;i--){
     const it=items[i];
     const r=await getRectForItem(it);
     if(p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
       const pos=getPos(it.id);
-      if (it.kind==='airline' && (e.shiftKey || (e.touches && e.touches.length===2))) {
-        const cur = getLogoScale(it.id);
-        resizingLogo = { id: it.id, startY: p.y, startScale: cur };
-      } else {
-        dragging={ id:it.id, offX: pos.x-p.x, offY: pos.y-p.y };
-      }
-      e.preventDefault(); return;
+      dragging={ id:it.id, offX: pos.x-p.x, offY: pos.y-p.y };
+      return;
     }
   }
-}
-function onMove(e){
-  const p=pointer(e);
-  if(resizingLogo){
-    const dy = (p.y - resizingLogo.startY);
-    const newScale = Math.max(0.4, Math.min(2.5, resizingLogo.startScale * (1 + dy/240)));
-    setLogoScale(resizingLogo.id, newScale);
-    render();
-    return;
-  }
+});
+
+c.addEventListener('mousemove', e => {
   if(!dragging) return;
+  const p = pointer(e);
   posOverrides[dragging.id]={ x:Math.round(p.x+dragging.offX), y:Math.round(p.y+dragging.offY) };
-  saveJSON(LS_POS, posOverrides);
   render();
-}
-function onUp(){ dragging=null; resizingLogo=null; }
-
-c.addEventListener('mousedown', onDown);
-c.addEventListener('mousemove', onMove);
-window.addEventListener('mouseup', onUp);
-c.addEventListener('touchstart', onDown, {passive:false});
-c.addEventListener('touchmove', onMove, {passive:false});
-c.addEventListener('touchend', onUp);
-
-window.addEventListener('keydown', (e)=>{
-  if(e.key.toLowerCase()==='g'){ showGuides=!showGuides; if(elShowInd) elShowInd.checked=showGuides; render(); }
-  if(e.key.toLowerCase()==='r'){ localStorage.removeItem(LS_POS); localStorage.removeItem(LS_LOGO); posOverrides={}; logoScaleMap={}; renderRowEditors(); render(); }
 });
 
+window.addEventListener('mouseup', ()=>{
+  if(dragging) saveJSON(LS_POS, posOverrides);
+  dragging=null;
+});
+
+// File handlers
 elBgSelect?.addEventListener('change', render);
-elBgInput?.addEventListener('change', (e)=>{
-  const f=e.target.files?.[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=ev=>{ state.bgURL=ev.target.result; render(); };
-  r.readAsDataURL(f);
+elBgInput?.addEventListener('change', e => {
+   const f=e.target.files[0]; if(f) { const r=new FileReader(); r.onload=v=>{state.bgURL=v.target.result; render();}; r.readAsDataURL(f); }
 });
 
+// Download
 function buildFilename(ext){
   const raw = (elDate?.value || '').replace(/,/g,' ').trim();
-  const m = raw.match(/(\d{1,2})\s+([A-Za-zÀ-ÿ]+)\s+(\d{4})/i);
-  if(m){
-    const tgl = m[1];
-    const bln = m[2].toLowerCase().replace(/^\p{L}/u, ch => ch.toUpperCase());
-    const th  = m[3];
-    return `scheduleflightbwx_${tgl}${bln}${th}.${ext}`;
-  }
-  const safe = raw.replace(/\s+/g,'');
-  return `scheduleflightbwx_${safe || 'poster'}.${ext}`;
+  const safe = raw.replace(/\s+/g,'') || 'poster';
+  return `scheduleflight_${safe}.${ext}`;
 }
 
-document.getElementById('renderBtn')?.addEventListener('click', render);
 document.getElementById('savePng')?.addEventListener('click', ()=>{
-  const a=document.createElement('a'); a.download=buildFilename('png'); a.href=c.toDataURL('image/png'); a.click();
+  const a=document.createElement('a'); a.download=buildFilename('png'); a.href=c.toDataURL(); a.click();
 });
 document.getElementById('savePdf')?.addEventListener('click', async ()=>{
   if(!window.jspdf){
-    await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'; s.onload=res; s.onerror=rej; document.body.appendChild(s); });
+    await new Promise((res)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'; s.onload=res; document.body.appendChild(s); });
   }
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({orientation:'p', unit:'px', format:[BASE_W, BASE_H]});
@@ -625,7 +474,7 @@ document.getElementById('savePdf')?.addEventListener('click', async ()=>{
   pdf.save(buildFilename('pdf'));
 });
 
-render().catch(err=>{
-  console.warn('Render gagal:', err);
-  ctx.fillStyle='#10a7b5'; ctx.fillRect(0,0,c.width,c.height);
-});
+// Init
+loadConfig(); 
+renderRowEditors();
+render();
