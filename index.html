@@ -113,13 +113,11 @@
     .small-divider { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
     .section-title { margin-top: 18px; font-weight: 700; color: #38bdf8; font-size: 13px; text-transform: uppercase; }
 
-    /* ===== AIRLINE LIST (PERBAIKAN DESKTOP) ===== */
+    /* ===== AIRLINE LIST (DESKTOP GRID) ===== */
     .airline-list { display: flex; flex-direction: column; gap: 8px; }
     
-    /* Layout Desktop: Grid 5 Kolom untuk Input, Logo Wrapper di bawah */
     .airline-row { 
       display: grid; 
-      /* Kolom: Maskapai (Lebar) | Flight (Kecil) | Kota (Sedang) | Jam (Kecil) | Hapus (Fix) */
       grid-template-columns: 1.6fr 0.9fr 1.4fr 0.9fr 32px; 
       gap: 6px; 
       align-items: center; 
@@ -146,12 +144,11 @@
     }
     .airline-row button:hover { background: #ef4444; color: #fff; }
 
-    /* Wrapper Logo Control (Di Desktop: Baris Baru Full Width) */
+    /* Logo Control Wrapper */
     .logo-wrapper {
-      grid-column: 1 / -1; /* Span dari awal sampai akhir */
+      grid-column: 1 / -1; 
       display: flex; align-items: center; gap: 6px;
-      margin-top: 4px;
-      padding-top: 6px;
+      margin-top: 4px; padding-top: 6px;
       border-top: 1px dashed rgba(255,255,255,0.1);
     }
     .logo-controls input {
@@ -189,20 +186,15 @@
       canvas { width: 100%; height: 100%; object-fit: contain; }
       aside { position: fixed; inset: 0; width: 85%; max-width: 340px; box-shadow: 10px 0 40px rgba(0,0,0,0.6); }
       
-      /* Reset Grid untuk Mobile (Pake Flex Wrap) */
       .airline-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
       .airline-row input { flex: 1 1 45%; min-width: 110px; }
       
-      /* Di HP, Logo di kiri bawah, Tombol Hapus di kanan bawah */
       .logo-wrapper { 
         flex: 1 1 auto; 
-        order: 5; /* Urutan setelah input */
+        order: 5; 
         margin-top: 0; border-top: none; padding-top: 0;
       }
-      .airline-row button { 
-        flex: 0 0 32px; width: 32px !important; 
-        order: 6; 
-      }
+      .airline-row button { flex: 0 0 32px; width: 32px !important; order: 6; }
       
       #togglePanel { bottom: 20px; right: 20px; width: 50px; height: 50px; }
     }
@@ -275,6 +267,11 @@
             </div>
           </div>
 
+          <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
+            <input id="showIndicators" type="checkbox" checked style="width:auto;">
+            <label for="showIndicators" style="margin:0; font-weight:400;">Tampilkan Indikator ID + Koordinat</label>
+          </div>
+
           <button id="lockSettings" class="btn" style="background:#f59e0b; color:#0f172a; margin-top:16px;">
             🔒 Kunci & Simpan Pengaturan
           </button>
@@ -300,6 +297,6 @@
     <canvas id="poster" width="1080" height="1920"></canvas>
   </main>
 
-  <script src="jadwal.js?v=18"></script>
+  <script src="jadwal.js?v=19"></script>
 </body>
 </html>
