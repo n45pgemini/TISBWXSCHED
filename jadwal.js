@@ -1,5 +1,8 @@
 /******************************************************************
- * jadwal.js — v19 (Restored Grid/Labels & Desktop Layout)
+ * jadwal.js — v20 (Toggle Lock Feature)
+ * - Added Locking Mechanism (Toggle Lock/Unlock)
+ * - Dragging is disabled when Locked
+ * - Settings are saved when Locking
  ******************************************************************/
 
 // ===== Basis koordinat
@@ -32,6 +35,9 @@ const elBgInput    = document.getElementById('bgInput');
 const elShowInd    = document.getElementById('showIndicators');
 const btnToggle    = document.getElementById('togglePanel');
 const btnLock      = document.getElementById('lockSettings');
+
+// State Pengunci (Lock)
+let isLocked = false; 
 
 // Date Dropdowns
 const selDay    = document.getElementById('selDay');
@@ -82,7 +88,7 @@ function injectColorPresets() {
 }
 setTimeout(injectColorPresets, 100);
 
-// ===== FITUR SAVE / LOAD CONFIG =====
+// ===== FITUR SAVE / LOAD & LOCK CONFIG =====
 const LS_CONFIG = 'fs_config_v1';
 
 function loadConfig() {
@@ -104,19 +110,38 @@ function loadConfig() {
   }
 }
 
+// Update Tampilan Tombol Kunci
+function updateLockUI() {
+  if (isLocked) {
+    btnLock.innerHTML = "🔒 Posisi Terkunci (Klik untuk Buka)";
+    btnLock.style.background = "#ef4444"; // Merah
+    btnLock.style.color = "#ffffff";
+    btnLock.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.4)";
+  } else {
+    btnLock.innerHTML = "🔓 Kunci & Simpan Pengaturan";
+    btnLock.style.background = "#f59e0b"; // Kuning Emas
+    btnLock.style.color = "#0f172a";
+    btnLock.style.boxShadow = "0 4px 12px rgba(245, 158, 11, 0.4)";
+  }
+}
+
+// Listener Tombol Kunci (Toggle)
 btnLock?.addEventListener('click', () => {
-  const config = {
-    sizeDate: elSizeDate?.value || 40,
-    sizeRow: elSizeRow?.value || 30,
-    sizeHours: elSizeHours?.value || 35,
-    hoursColor: elHoursCol?.value || '#ffffff',
-    globalColor: state.globalColor || '#ffffff'
-  };
-  localStorage.setItem(LS_CONFIG, JSON.stringify(config));
-  
-  const oriText = btnLock.innerHTML;
-  btnLock.innerHTML = "✅ Tersimpan!";
-  setTimeout(() => btnLock.innerHTML = oriText, 1500);
+  // Toggle status
+  isLocked = !isLocked;
+  updateLockUI();
+
+  if (isLocked) {
+    // Jika dikunci, simpan pengaturan
+    const config = {
+      sizeDate: elSizeDate?.value || 40,
+      sizeRow: elSizeRow?.value || 30,
+      sizeHours: elSizeHours?.value || 35,
+      hoursColor: elHoursCol?.value || '#ffffff',
+      globalColor: state.globalColor || '#ffffff'
+    };
+    localStorage.setItem(LS_CONFIG, JSON.stringify(config));
+  }
 });
 
 [elSizeDate, elSizeRow, elSizeHours, elHoursCol].forEach(el => {
@@ -429,13 +454,12 @@ async function render(){
         
         ctx.drawImage(drawObj,x,y,W,H);
         
-        // Restore Grid Box + ID Label
+        // Visualisasi Grid untuk Logo
         if(showGuides){
            ctx.save(); 
            ctx.shadowColor='transparent'; 
            ctx.strokeStyle='#00ffff88'; ctx.lineWidth=2; 
            ctx.strokeRect(x,y,W,H); 
-           // Kembalikan teks ID
            ctx.fillStyle='#00ffff'; ctx.font='700 16px Montserrat, system-ui'; ctx.textAlign='left';
            ctx.fillText(`${it.id}`, x, Math.max(16,y-6));
            ctx.restore();
@@ -448,7 +472,7 @@ async function render(){
     ctx.font=p.font; ctx.fillStyle=p.color; ctx.textAlign=p.align; ctx.textBaseline='alphabetic';
     ctx.fillText(txt, p.x, p.y);
     
-    // Restore Grid Box + ID Label untuk Teks
+    // Visualisasi Grid untuk Teks
     if(showGuides){
        const w = ctx.measureText(txt).width;
        let x0=p.x; if(p.align==='center') x0-=w/2; else if(p.align==='right') x0-=w;
@@ -479,6 +503,9 @@ function pointer(e){
 }
 
 c.addEventListener('mousedown', async e => {
+  // === CEK KUNCI ===
+  if(isLocked) return;
+
   const p = pointer(e);
   for(let i=items.length-1;i>=0;i--){
     const it=items[i];
@@ -491,6 +518,24 @@ c.addEventListener('mousedown', async e => {
   }
 });
 
+c.addEventListener('touchstart', async e => {
+  // === CEK KUNCI MOBILE ===
+  if(isLocked) return;
+  
+  if(e.touches.length > 1) return; // ignore multitouch gestures
+  const p = pointer(e);
+  for(let i=items.length-1;i>=0;i--){
+    const it=items[i];
+    const r=await getRectForItem(it);
+    if(p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h){
+      const pos=getPos(it.id);
+      dragging={ id:it.id, offX: pos.x-p.x, offY: pos.y-p.y };
+      e.preventDefault(); // prevent scrolling
+      return;
+    }
+  }
+}, {passive:false});
+
 c.addEventListener('mousemove', e => {
   if(!dragging) return;
   const p = pointer(e);
@@ -498,7 +543,19 @@ c.addEventListener('mousemove', e => {
   render();
 });
 
+c.addEventListener('touchmove', e => {
+  if(!dragging) return;
+  const p = pointer(e);
+  posOverrides[dragging.id]={ x:Math.round(p.x+dragging.offX), y:Math.round(p.y+dragging.offY) };
+  render();
+  e.preventDefault();
+}, {passive:false});
+
 window.addEventListener('mouseup', ()=>{
+  if(dragging) saveJSON(LS_POS, posOverrides);
+  dragging=null;
+});
+window.addEventListener('touchend', ()=>{
   if(dragging) saveJSON(LS_POS, posOverrides);
   dragging=null;
 });
@@ -529,5 +586,6 @@ document.getElementById('savePdf')?.addEventListener('click', async ()=>{
 
 // INITIAL LOAD
 loadConfig();
+updateLockUI(); // Set UI Button
 renderRowEditors();
 render();
