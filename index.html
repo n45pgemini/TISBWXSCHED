@@ -7,175 +7,240 @@
   <link rel="stylesheet" href="jadwal.css?v=6" />
 
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 
   <style>
-    :root { --bg:#0a1425; --text:#fff; }
-    * { box-sizing: border-box; }
+    :root { 
+      --bg: #0f172a; 
+      --panel-bg: #1e293b;
+      --text: #f1f5f9; 
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --border: #334155;
+      --input-bg: #0f172a;
+    }
+    * { box-sizing: border-box; outline: none; }
+    
     body {
       font-family: 'Montserrat', sans-serif;
       background: var(--bg); color: var(--text);
-      margin:0; display:flex; min-height:100svh;
+      margin: 0; display: flex; min-height: 100svh;
+      overflow: hidden; /* Prevent body scroll if panel scrolls */
     }
 
-    /* ===== Panel ===== */
+    /* ===== Panel Sidebar ===== */
     aside {
-      width: 360px; background: #111a2d; padding: 16px; overflow-y: auto;
-      border-right: 1px solid #1d2a44; transition: transform .25s ease, opacity .25s ease;
+      width: 400px; /* Sedikit diperlebar untuk kenyamanan */
+      background: var(--panel-bg); 
+      padding: 20px; 
+      overflow-y: auto;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 16px;
+      transition: transform .3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+      height: 100svh;
     }
-    body.panel-collapsed aside { transform: translateX(-100%); opacity: 0; }
+    
+    body.panel-collapsed aside { transform: translateX(-100%); width: 0; padding: 0; opacity: 0; }
 
-    label { display:block; margin-top:10px; font-weight:600; font-size:14px; }
-    input[type="text"], input[type="file"], input[type="color"], input[type="range"], select {
-      width:100%; margin-top:4px; padding:8px; border-radius:8px; border:none;
-      background:#1e2d4a; color:#fff;
+    /* Typography & Elements */
+    h2 { margin: 0 0 4px; font-size: 20px; color: var(--accent); letter-spacing: -0.5px; }
+    p.subtitle { margin: 0 0 16px; font-size: 12px; color: #94a3b8; opacity: 0.8; }
+    
+    label { display: block; margin-top: 12px; margin-bottom: 6px; font-weight: 600; font-size: 13px; color: #cbd5e1; }
+    
+    input[type="text"], input[type="file"], select {
+      width: 100%; padding: 10px 12px; border-radius: 8px; 
+      border: 1px solid var(--border);
+      background: var(--input-bg); color: #fff;
+      font-size: 14px; transition: border-color 0.2s;
     }
-    h2 { margin:0 0 12px; font-size:18px; }
+    input:focus, select:focus { border-color: var(--accent); }
+
+    /* Buttons */
     .btn {
-      background:#0ea5e9; border:none; color:white; padding:10px 12px; border-radius:8px;
-      cursor:pointer; margin-top:8px; width:100%; font-weight:700;
+      background: var(--accent); color: #0f172a; 
+      border: none; padding: 12px; border-radius: 8px;
+      cursor: pointer; width: 100%; font-weight: 700; font-size: 14px;
+      transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px;
     }
-    .btn.secondary { background:#334155; }
-    .small { font-size:11px; color:#94a3b8; }
-    .small-divider { border:0; border-top:1px solid #22314f; margin:12px 0; }
-    .section-title { margin-top:18px; font-weight:700; color:#38bdf8; font-size:14px; }
+    .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn.secondary { background: var(--border); color: #fff; }
+    .btn.secondary:hover { background: #475569; }
+    
+    .btn-small { padding: 6px 12px; font-size: 12px; }
 
-    .airline-row { display:grid; grid-template-columns:repeat(4,1fr) 40px; gap:6px; margin-bottom:8px; }
-    .airline-row input { background:#1e2d4a; color:#fff; border:none; padding:8px; border-radius:6px; }
-    .airline-row button { background:#ef4444; border:none; color:white; font-weight:800; border-radius:6px; cursor:pointer; }
+    /* Sections & Accordion */
+    .section-title { 
+      margin-top: 24px; margin-bottom: 8px; 
+      font-weight: 800; color: #fff; font-size: 14px; 
+      text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border); padding-bottom: 4px;
+    }
 
-    .toggle { display:flex; align-items:center; gap:8px; margin-top:12px; }
-    .toggle input { width:auto; }
+    details {
+      background: rgba(0,0,0,0.2); border-radius: 8px;
+      margin-top: 10px; border: 1px solid var(--border);
+    }
+    details summary {
+      padding: 12px; cursor: pointer; font-weight: 600; font-size: 13px;
+      list-style: none; display: flex; justify-content: space-between; align-items: center;
+    }
+    details summary::after { content: '+'; font-size: 16px; font-weight: bold; }
+    details[open] summary::after { content: '−'; }
+    details[open] summary { border-bottom: 1px solid var(--border); }
+    .details-content { padding: 12px; }
 
-    /* ===== Main / Canvas ===== */
+    /* Date Builder Grid */
+    .date-grid { display: grid; grid-template-columns: 0.8fr 1.5fr 1fr auto; gap: 6px; }
+
+    /* Main Canvas Area */
     main {
-      flex:1; display:flex; align-items:center; justify-content:center; background:#0a1425;
-      padding:16px; position:relative;
-    }
-    /* Rasio poster dikunci 1080:1920, desktop pakai tinggi sebagai acuan */
-    canvas{
-      background:#222;
-      border-radius:10px;
-      box-shadow:0 8px 24px rgba(0,0,0,.35);
-      touch-action:none;
-      aspect-ratio: 1080 / 1920;                  /* kunci rasio */
-      height: min(calc(100svh - 32px), 980px);   /* desktop: tinggi jadi acuan */
-      width: auto;                                /* lebar mengikuti rasio, tidak melebar */
+      flex: 1; display: flex; align-items: center; justify-content: center; 
+      background-color: #020617;
+      background-image: radial-gradient(#1e293b 1px, transparent 1px);
+      background-size: 24px 24px;
+      padding: 20px; position: relative; overflow: hidden;
     }
 
-    /* Tombol toggle panel */
+    canvas {
+      background: #222; border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      aspect-ratio: 1080 / 1920;
+      height: min(calc(100svh - 40px), 900px);
+      width: auto; object-fit: contain;
+    }
+
+    /* Toggle Button */
     #togglePanel {
-      position: fixed; right: 16px; top: 16px; z-index: 50;
-      background:#0ea5e9; color:#fff; border:none; border-radius:10px;
-      padding:10px 12px; font-weight:800; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.35);
+      position: absolute; right: 20px; top: 20px; z-index: 50;
+      background: var(--panel-bg); color: #fff; 
+      border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 16px; 
+      font-weight: 700; cursor: pointer; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      display: flex; align-items: center; gap: 8px;
     }
-    body.panel-collapsed #togglePanel { right: 16px; }
-    #togglePanel span { margin-left:6px; font-weight:700; }
+    #togglePanel:hover { background: #334155; }
 
-    /* ===== Responsif (HP/Tablet) ===== */
+    /* Utility */
+    .row-colors { display: flex; gap: 8px; align-items: center; }
+    input[type="color"] { width: 40px; height: 40px; border: none; padding: 0; background: none; cursor: pointer; }
+    .helper-text { font-size: 11px; color: #64748b; margin-top: 4px; display: block; }
+
+    /* Responsive */
     @media (max-width: 900px) {
-      body { flex-direction: column; }
-      aside { width:100%; border-right:0; border-bottom:1px solid #1d2a44; }
-      body.panel-collapsed aside { transform: translateY(-100%); }
-      main { padding:12px; }
-      canvas { width:100%; height:auto; max-height: calc(100svh - 120px); } /* HP: lebar penuh */
-      #togglePanel { top: 10px; right: 10px; }
-    }
-
-    /* ===== Desktop guard (hindari melebar di monitor tinggi) ===== */
-    @media (min-width: 901px){
-      canvas{
-        height: min(calc(100svh - 64px), 1100px); /* batas tinggi aman desktop */
-        width: auto;                               /* tetap ikut rasio */
-      }
+      body { flex-direction: column; overflow: auto; }
+      aside { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); position: relative; }
+      main { min-height: 60vh; padding: 10px; }
+      canvas { width: 100%; height: auto; max-height: none; }
+      body.panel-collapsed aside { display: none; }
+      #togglePanel { position: fixed; top: 10px; right: 10px; }
     }
   </style>
 </head>
 <body>
-  <button id="togglePanel">☰ <span>Sembunyikan Panel</span></button>
+
+  <button id="togglePanel">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    <span>Menu</span>
+  </button>
 
   <aside>
-    <h2>Generator Poster Jadwal</h2>
+    <div>
+      <h2>Flight Scheduler</h2>
+      <p class="subtitle">Buat poster jadwal penerbangan WA Status</p>
+    </div>
 
-    <label>Hari & Tanggal</label>
-    <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
-
-    <div id="dateBuilder" style="margin-top:6px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;">
-        <select id="selDay"   aria-label="Tanggal"></select>
+    <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px;">
+      <label>📅 Hari & Tanggal</label>
+      <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
+      
+      <div class="date-grid" style="margin-top:8px;">
+        <select id="selDay" aria-label="Tanggal"></select>
         <select id="selMonth" aria-label="Bulan"></select>
-        <select id="selYear"  aria-label="Tahun"></select>
-        <button class="btn secondary" id="applyDateSmall" type="button" style="padding:8px 10px;">Set</button>
+        <select id="selYear" aria-label="Tahun"></select>
+        <button class="btn btn-small secondary" id="applyDateSmall" type="button">Set</button>
       </div>
-      <span class="small">Format otomatis: HARI, DD BULAN YYYY</span>
+      
+      <label style="margin-top:16px;">🖼️ Background Poster</label>
+      <select id="bgSelect">
+        <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
+        <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
+        <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
+        <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
+        <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
+      </select>
+      <div style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:11px; color:#94a3b8;">Atau upload sendiri:</span>
+        <input type="file" id="bgInput" accept="image/*" style="font-size:11px; padding:6px;" />
+      </div>
     </div>
 
-    <label>Operating Hours (teks di kotak hijau)</label>
-    <input id="hoursText" type="text" value="Operating Hours 06.00 - 18.00 WIB" />
-
-    <hr class="small-divider">
-
-    <label>Ukuran Huruf – Tanggal (px)</label>
-    <input id="sizeDate" type="range" min="28" max="72" step="1" value="40">
-    <span class="small" id="sizeDateVal">40</span>
-
-    <label>Ukuran Huruf – Baris Jadwal (px)</label>
-    <input id="sizeRow" type="range" min="24" max="56" step="1" value="30">
-    <span class="small" id="sizeRowVal">30</span>
-
-    <label>Ukuran Huruf – Operating Hours (px)</label>
-    <input id="sizeHours" type="range" min="24" max="56" step="1" value="35">
-    <span class="small" id="sizeHoursVal">35</span>
-
-    <label>Warna Teks – Operating Hours</label>
-    <input id="hoursColor" type="color" value="#ffffff">
-
-    <label>Warna Teks Utama (Global Override)</label>
-    <div style="display:flex; gap:6px;">
-      <input id="allTextColor" type="color" value="#ffffff" style="height:38px; width:50px; padding:2px;">
-      <input id="allTextHex" type="text" value="#ffffff" placeholder="#ffffff" style="margin-top:0;">
-    </div>
-
-    <div class="toggle">
-      <input id="showIndicators" type="checkbox" checked>
-      <label for="showIndicators" style="margin:0">Tampilkan Indikator ID + Koordinat</label>
-    </div>
-
-    <hr class="small-divider">
-
-    <label>Background</label>
-    <select id="bgSelect">
-      <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
-      <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
-      <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
-      <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
-      <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
-    </select>
-
-    <label>Atau unggah file background manual</label>
-    <input type="file" id="bgInput" accept="image/*" />
-
-    <div class="section-title">KEDATANGAN / ARRIVAL (maks 3 baris)</div>
+    <div class="section-title">✈️ Input Data Penerbangan</div>
+    
+    <label>KEDATANGAN / ARRIVAL</label>
     <div id="arrivals" class="airline-list"></div>
-    <button class="btn" id="addArrival">+ Tambah Baris Kedatangan</button>
+    <button class="btn secondary btn-small" id="addArrival" style="margin-top:8px;">+ Tambah Baris Kedatangan</button>
 
-    <div class="section-title">KEBERANGKATAN / DEPARTURE (maks 3 baris)</div>
+    <label style="margin-top:20px;">KEBERANGKATAN / DEPARTURE</label>
     <div id="departures" class="airline-list"></div>
-    <button class="btn" id="addDeparture">+ Tambah Baris Keberangkatan</button>
+    <button class="btn secondary btn-small" id="addDeparture" style="margin-top:8px;">+ Tambah Baris Keberangkatan</button>
 
-    <hr class="small-divider">
+    <details>
+      <summary>🎨 Pengaturan Teks & Ukuran (Advanced)</summary>
+      <div class="details-content">
+        <label>Teks Operating Hours</label>
+        <input id="hoursText" type="text" value="Operating Hours 06.00 - 18.00 WIB" />
 
-    <div class="stack">
-      <button class="btn" id="renderBtn">Render Poster</button>
-      <button class="btn secondary" id="savePng">Download PNG</button>
-      <button class="btn secondary" id="savePdf">Download PDF</button>
+        <div style="margin-top:16px; border-top:1px dashed #334155; padding-top:12px;">
+          <label>Ukuran Huruf Tanggal: <span id="sizeDateVal" style="color:var(--accent)">40</span>px</label>
+          <input id="sizeDate" type="range" min="28" max="72" step="1" value="40" style="width:100%">
+          
+          <label>Ukuran Huruf Baris: <span id="sizeRowVal" style="color:var(--accent)">30</span>px</label>
+          <input id="sizeRow" type="range" min="24" max="56" step="1" value="30" style="width:100%">
+          
+          <label>Ukuran Huruf Jam Ops: <span id="sizeHoursVal" style="color:var(--accent)">35</span>px</label>
+          <input id="sizeHours" type="range" min="24" max="56" step="1" value="35" style="width:100%">
+        </div>
+
+        <div style="margin-top:16px; border-top:1px dashed #334155; padding-top:12px;">
+          <label>Warna Global Teks</label>
+          <div class="row-colors">
+            <input id="allTextColor" type="color" value="#ffffff">
+            <input id="allTextHex" type="text" value="#ffffff" placeholder="#HEX">
+          </div>
+          
+          <label>Warna Jam Ops (Override)</label>
+          <input id="hoursColor" type="color" value="#ffffff" style="width:100%; height:30px;">
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+          <input id="showIndicators" type="checkbox" checked style="width:auto; margin:0;">
+          <label for="showIndicators" style="margin:0; font-weight:400; font-size:12px;">Tampilkan Garis Bantu (Grid)</label>
+        </div>
+      </div>
+    </details>
+
+    <div style="margin-top: auto; padding-top: 20px;">
+      <button class="btn" id="renderBtn" style="background:#10b981; color:#fff; margin-bottom:12px;">
+        🔄 Render Ulang Poster
+      </button>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button class="btn secondary" id="savePng">
+          💾 Simpan PNG
+        </button>
+        <button class="btn secondary" id="savePdf">
+          📄 Simpan PDF
+        </button>
+      </div>
+      
+      <p class="helper-text" style="text-align:center; margin-top:12px;">
+        Tips: Shift + Drag logo untuk resize. Tekan 'G' untuk hide grid.
+      </p>
     </div>
-
-    <p class="small">
-      Drag & drop teks/logo di kanvas.<br>
-      Tekan <b>Shift + Drag Logo</b> untuk Resize.<br>
-      Tekan <b>G</b> (toggle indikator) & <b>R</b> (reset posisi).
-    </p>
   </aside>
 
   <main>
