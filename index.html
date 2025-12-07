@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a">
-  <title>Flight Schedule Poster</title>
+  <title>Flight Schedule Poster – WA Status</title>
   
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -12,14 +12,14 @@
   <style>
     :root { 
       --bg: #0f172a; 
-      --panel-bg: rgba(30, 41, 59, 0.95);
+      --panel-bg: rgba(17, 26, 45, 0.95);
       --text: #f8fafc; 
-      --accent: #38bdf8;
-      --accent-hover: #0ea5e9;
+      --accent: #0ea5e9;
+      --accent-hover: #0284c7;
       --border: rgba(255, 255, 255, 0.1);
       --input-bg: rgba(0, 0, 0, 0.3);
-      --fab-bg: #38bdf8;
-      --fab-text: #0f172a;
+      --fab-bg: #0ea5e9;
+      --fab-text: #fff;
     }
 
     * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -29,7 +29,7 @@
       background: var(--bg); color: var(--text);
       margin: 0; padding: 0;
       height: 100svh; width: 100vw;
-      overflow: hidden; /* Mencegah scroll pada body utama */
+      overflow: hidden;
       display: flex;
     }
 
@@ -38,23 +38,19 @@
       flex: 1;
       position: relative;
       display: flex; align-items: center; justify-content: center;
-      background-color: #020617;
+      background-color: #0a1425;
       background-image: 
-        radial-gradient(circle at 50% 50%, #1e293b 0%, transparent 50%),
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-      background-size: 100% 100%, 40px 40px, 40px 40px;
+        radial-gradient(circle at 50% 50%, #1e293b 0%, transparent 50%);
+      background-size: 100% 100%;
       z-index: 1;
       padding: 20px;
       transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Canvas Responsif */
     canvas {
       background: #222; 
       border-radius: 12px;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-      /* Logika responsive: Fit to screen height */
       height: 100%; 
       max-height: calc(100svh - 40px);
       width: auto;
@@ -67,243 +63,199 @@
       width: 400px;
       height: 100%;
       background: var(--panel-bg);
-      backdrop-filter: blur(12px); /* Efek kaca buram */
+      backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-right: 1px solid var(--border);
-      padding: 0;
       display: flex; flex-direction: column;
       z-index: 100;
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
       box-shadow: 5px 0 25px rgba(0,0,0,0.5);
     }
 
-    /* Scrollable Content di dalam Aside */
     .aside-content {
-      flex: 1; overflow-y: auto; padding: 24px;
+      flex: 1; overflow-y: auto; padding: 20px;
       scrollbar-width: thin; scrollbar-color: var(--border) transparent;
     }
-    .aside-content::-webkit-scrollbar { width: 6px; }
-    .aside-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    /* State: Panel Collapsed (Hidden) */
+    
+    /* State: Panel Collapsed */
     body.panel-collapsed aside {
       transform: translateX(-100%);
-      position: absolute; /* Lepas dari flow layout saat hidden */
+      position: absolute;
     }
     body.panel-collapsed main { margin-left: 0; }
 
     /* ===== KOMPONEN UI ===== */
-    h2 { margin: 0 0 4px; font-size: 22px; color: var(--accent); letter-spacing: -0.5px; }
-    p.subtitle { margin: 0 0 20px; font-size: 12px; color: #94a3b8; }
-
-    label { display: block; margin-top: 16px; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #e2e8f0; }
+    h2 { margin: 0 0 12px; font-size: 20px; color: var(--accent); letter-spacing: -0.5px; }
+    
+    label { display: block; margin-top: 14px; margin-bottom: 6px; font-weight: 600; font-size: 12px; color: #9fb3c9; }
     
     input[type="text"], input[type="file"], select {
-      width: 100%; padding: 12px; border-radius: 10px; 
+      width: 100%; padding: 10px; border-radius: 8px; 
       border: 1px solid var(--border);
       background: var(--input-bg); color: #fff;
-      font-size: 14px; font-family: inherit;
-      transition: border-color 0.2s, background 0.2s;
+      font-size: 13px; font-family: inherit;
     }
     input:focus, select:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); }
 
+    /* Range Slider */
+    input[type="range"] { width: 100%; margin: 4px 0; }
+
     /* Button Styling */
     .btn {
-      background: var(--accent); color: #0f172a; 
-      border: none; padding: 14px; border-radius: 10px;
-      cursor: pointer; width: 100%; font-weight: 700; font-size: 14px;
-      transition: transform 0.2s, filter 0.2s;
+      background: var(--accent); color: var(--fab-text); 
+      border: none; padding: 12px; border-radius: 8px;
+      cursor: pointer; width: 100%; font-weight: 700; font-size: 13px;
+      transition: transform 0.2s; margin-top: 8px;
       display: flex; justify-content: center; align-items: center; gap: 8px;
     }
     .btn:active { transform: scale(0.98); }
-    .btn.secondary { background: rgba(255,255,255,0.1); color: #fff; }
-    .btn.secondary:hover { background: rgba(255,255,255,0.15); }
-    .btn-small { padding: 8px 12px; font-size: 12px; border-radius: 8px; }
+    .btn.secondary { background: #334155; color: #e5e7eb; }
+    .btn.secondary:hover { background: #475569; }
 
-    /* List & Accordion */
-    .airline-list { display: flex; flex-direction: column; gap: 8px; }
+    .small { font-size: 11px; color: #94a3b8; display: block; margin-top: 4px; }
+    .small-divider { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
+    .section-title { margin-top: 18px; font-weight: 700; color: #38bdf8; font-size: 13px; text-transform: uppercase; }
+
+    /* Airline List */
+    .airline-list { display: flex; flex-direction: column; gap: 6px; }
     .airline-row { 
-      display: grid; grid-template-columns: 1fr 0.6fr 0.8fr 0.6fr auto; 
-      gap: 6px; align-items: center; 
-      background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px;
+      display: grid; grid-template-columns: repeat(4, 1fr) 34px; 
+      gap: 6px; align-items: center; margin-bottom: 4px;
     }
-    .airline-row input { padding: 8px; font-size: 12px; background: transparent; border: 1px solid transparent; }
-    .airline-row input:focus { border-color: var(--accent); background: var(--input-bg); }
-    
+    .airline-row input { padding: 8px; font-size: 11px; }
+    .airline-row button { background: #ef4444; margin-top: 0; padding: 0; height: 34px; border-radius: 6px; }
+
+    /* Accordion untuk setting advanced */
     details {
-      background: rgba(0,0,0,0.2); border-radius: 10px;
-      margin-top: 16px; border: 1px solid var(--border); overflow: hidden;
+      background: rgba(0,0,0,0.2); border-radius: 8px;
+      margin-top: 12px; border: 1px solid var(--border);
     }
     details summary {
-      padding: 14px; cursor: pointer; font-weight: 600; font-size: 13px;
+      padding: 10px; cursor: pointer; font-weight: 600; font-size: 12px;
       list-style: none; display: flex; justify-content: space-between; align-items: center;
-      background: rgba(255,255,255,0.02);
     }
-    details summary::after { content: '+'; font-size: 16px; font-weight: 800; color: var(--accent); }
+    details summary::after { content: '+'; font-weight: 800; color: var(--accent); }
     details[open] summary::after { content: '−'; }
-    .details-content { padding: 16px; border-top: 1px solid var(--border); }
+    .details-content { padding: 12px; border-top: 1px solid var(--border); }
 
-    /* Date Builder */
-    .date-grid { display: grid; grid-template-columns: 0.8fr 1.5fr 1fr auto; gap: 8px; }
-
-    /* ===== FAB (Floating Action Button) ===== */
+    /* FAB Toggle Button */
     #togglePanel {
-      position: fixed; 
-      bottom: 24px; right: 24px; z-index: 200;
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
       background: var(--fab-bg); color: var(--fab-text);
       border: none; border-radius: 50px;
-      padding: 0 20px; height: 56px;
+      padding: 0 20px; height: 50px;
       font-weight: 700; cursor: pointer;
-      box-shadow: 0 8px 20px rgba(56, 189, 248, 0.4);
-      display: flex; align-items: center; gap: 10px;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+      display: flex; align-items: center; gap: 8px;
     }
-    #togglePanel:hover { transform: translateY(-2px) scale(1.05); }
-    #togglePanel:active { transform: scale(0.95); }
-    
-    #togglePanel svg { width: 24px; height: 24px; }
-    #togglePanel span { font-size: 14px; }
-
-    /* Ubah teks tombol saat panel tertutup */
     body.panel-collapsed #togglePanel span::after { content: "Edit Jadwal"; }
-    body:not(.panel-collapsed) #togglePanel span::after { content: "Selesai"; }
-    
-    /* Ubah icon saat panel terbuka */
-    body:not(.panel-collapsed) #togglePanel { background: #fff; color: #0f172a; }
+    body:not(.panel-collapsed) #togglePanel span::after { content: "Tutup Panel"; }
 
-    /* ===== MOBILE RESPONSIVE TWEAKS ===== */
+    /* Mobile Responsive */
     @media (max-width: 900px) {
       body { flex-direction: column; }
+      main { position: fixed; inset: 0; padding: 16px 16px 80px 16px; }
+      canvas { width: 100%; height: 100%; object-fit: contain; }
       
-      /* Canvas selalu full di mobile */
-      main { 
-        position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-        padding: 16px 16px 80px 16px; /* Bottom padding for FAB space */
-        z-index: 1;
-      }
-      
-      canvas {
-        width: 100%; height: 100%; 
-        max-height: 100%; 
-        object-fit: contain;
-      }
-
-      /* Panel melayang di atas canvas (Drawer) */
       aside {
-        position: fixed;
-        top: 0; left: 0; bottom: 0;
-        width: 85%; max-width: 340px;
+        position: fixed; inset: 0; width: 85%; max-width: 340px;
         box-shadow: 10px 0 40px rgba(0,0,0,0.6);
-        transform: translateX(0);
       }
-      
-      /* Saat collapsed (default di mobile sebaiknya hidden, tapi kita ikut logika JS toggle) */
-      /* Kita atur: Panel muncul menutupi sebagian layar */
-      
-      .airline-row { 
-        display: flex; flex-wrap: wrap; gap: 8px;
-      }
-      .airline-row input { flex: 1 1 40%; min-width: 80px; }
-      .airline-row button { flex: 0 0 auto; margin-left: auto; }
-
-      #togglePanel { bottom: 20px; right: 20px; height: 50px; padding: 0 16px; }
+      .airline-row { display: flex; flex-wrap: wrap; gap: 4px; background: rgba(255,255,255,0.03); padding: 6px; border-radius: 6px;}
+      .airline-row input { flex: 1 1 40%; min-width: 70px; }
+      .airline-row button { flex: 0 0 100%; margin-top: 4px; }
     }
   </style>
 </head>
-<body class=""> <button id="togglePanel">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
-      <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
-      <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
-      <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>
-    </svg>
+<body class="">
+
+  <button id="togglePanel">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     <span></span>
   </button>
 
   <aside>
     <div class="aside-content">
-      <div>
-        <h2>Flight Scheduler</h2>
-        <p class="subtitle">Editor Poster Jadwal Penerbangan</p>
-      </div>
+      <h2>Generator Poster Jadwal</h2>
 
-      <div style="background: rgba(255,255,255,0.03); padding: 16px; border-radius: 12px; border:1px solid var(--border);">
-        <label style="margin-top:0">📅 Tanggal Penerbangan</label>
-        <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
-        
-        <div class="date-grid" style="margin-top:10px;">
-          <select id="selDay"></select>
-          <select id="selMonth"></select>
-          <select id="selYear"></select>
-          <button class="btn btn-small secondary" id="applyDateSmall" type="button">Set</button>
-        </div>
-        
-        <label>🖼️ Pilih Background</label>
-        <div style="display:flex; gap:8px;">
-          <select id="bgSelect" style="flex:1;">
-            <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
-            <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
-            <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
-            <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
-            <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
-          </select>
-          <label for="bgInput" class="btn secondary btn-small" style="width:auto; margin:0; display:flex; align-items:center;">
-            📂 <input type="file" id="bgInput" accept="image/*" style="display:none;" />
-          </label>
-        </div>
-      </div>
+      <label>Hari & Tanggal</label>
+      <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
 
-      <div style="margin-top:24px;">
-        <label style="color:var(--accent); font-weight:800; letter-spacing:0.5px;">🛬 KEDATANGAN / ARRIVAL</label>
-        <div id="arrivals" class="airline-list"></div>
-        <button class="btn secondary btn-small" id="addArrival" style="margin-top:10px; border-style:dashed;">+ Tambah Baris</button>
-
-        <label style="color:var(--accent); font-weight:800; letter-spacing:0.5px; margin-top:24px;">🛫 KEBERANGKATAN / DEPARTURE</label>
-        <div id="departures" class="airline-list"></div>
-        <button class="btn secondary btn-small" id="addDeparture" style="margin-top:10px; border-style:dashed;">+ Tambah Baris</button>
+      <div id="dateBuilder" style="margin-top:6px; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px;">
+        <select id="selDay"   aria-label="Tanggal"></select>
+        <select id="selMonth" aria-label="Bulan"></select>
+        <select id="selYear"  aria-label="Tahun"></select>
+        <button class="btn secondary" id="applyDateSmall" type="button" style="margin-top:0; padding:0 12px;">Set</button>
       </div>
+      <span class="small">Format otomatis: HARI, DD BULAN YYYY</span>
+
+      <label>Background</label>
+      <select id="bgSelect">
+        <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
+        <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
+        <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
+        <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
+        <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
+      </select>
+
+      <label>Atau unggah file background manual</label>
+      <input type="file" id="bgInput" accept="image/*" />
+
+      <div class="section-title">KEDATANGAN / ARRIVAL (maks 3 baris)</div>
+      <div id="arrivals" class="airline-list"></div>
+      <button class="btn secondary" id="addArrival">+ Tambah Baris Kedatangan</button>
+
+      <div class="section-title">KEBERANGKATAN / DEPARTURE (maks 3 baris)</div>
+      <div id="departures" class="airline-list"></div>
+      <button class="btn secondary" id="addDeparture">+ Tambah Baris Keberangkatan</button>
 
       <details>
-        <summary>🎨 Kustomisasi Teks & Warna</summary>
+        <summary>Pengaturan Teks & Ukuran</summary>
         <div class="details-content">
-          <label>Teks Operating Hours</label>
+          <label>Operating Hours (teks di kotak hijau)</label>
           <input id="hoursText" type="text" value="Operating Hours 06.00 - 18.00 WIB" />
-
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px;">
-            <div>
-              <label>Size Tanggal</label>
-              <input id="sizeDate" type="range" min="20" max="80" value="40" style="width:100%">
-            </div>
-            <div>
-              <label>Size Baris</label>
-              <input id="sizeRow" type="range" min="15" max="60" value="30" style="width:100%">
-            </div>
-          </div>
-
-          <label style="margin-top:16px;">Warna Global (Teks & Garis)</label>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <input id="allTextColor" type="color" value="#ffffff" style="height:40px; width:60px; padding:0; border:none; border-radius:6px; cursor:pointer;">
-            <input id="allTextHex" type="text" value="#ffffff" placeholder="#FFFFFF" style="flex:1;">
-          </div>
           
-          <div style="margin-top:16px; display:flex; align-items:center; gap:8px;">
-            <input id="showIndicators" type="checkbox" checked style="width:auto; transform:scale(1.2);">
-            <label for="showIndicators" style="margin:0; font-weight:400;">Tampilkan Garis Bantu (Grid)</label>
+          <hr class="small-divider">
+
+          <label>Ukuran Huruf – Tanggal (px): <span id="sizeDateVal">40</span></label>
+          <input id="sizeDate" type="range" min="28" max="72" step="1" value="40">
+          
+          <label>Ukuran Huruf – Baris Jadwal (px): <span id="sizeRowVal">30</span></label>
+          <input id="sizeRow" type="range" min="24" max="56" step="1" value="30">
+          
+          <label>Ukuran Huruf – Operating Hours (px): <span id="sizeHoursVal">35</span></label>
+          <input id="sizeHours" type="range" min="24" max="56" step="1" value="35">
+          
+          <label>Warna Teks – Operating Hours</label>
+          <input id="hoursColor" type="color" value="#ffffff" style="height:35px; padding:2px;">
+
+          <label>Warna Teks Utama (Global Override)</label>
+          <div style="display:flex; gap:6px;">
+            <input id="allTextColor" type="color" value="#ffffff" style="height:35px; width:50px; padding:2px;">
+            <input id="allTextHex" type="text" value="#ffffff" placeholder="#ffffff" style="margin-top:0;">
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
+            <input id="showIndicators" type="checkbox" checked style="width:auto;">
+            <label for="showIndicators" style="margin:0; font-weight:400;">Tampilkan Indikator ID + Koordinat</label>
           </div>
         </div>
       </details>
-
-      <div style="height:100px;"></div> </div>
-
-    <div style="padding: 20px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border);">
-      <button class="btn" id="renderBtn" style="background:#10b981; color:#fff; margin-bottom:12px; box-shadow:0 4px 12px rgba(16, 185, 129, 0.3);">
-        🔄 Refresh Poster
-      </button>
       
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="btn secondary" id="savePng">💾 PNG</button>
-        <button class="btn secondary" id="savePdf">📄 PDF</button>
+      <p class="small" style="margin-top:16px; opacity:0.7;">
+        Drag & drop teks/logo di kanvas.<br>
+        Tekan <b>Shift + Drag Logo</b> untuk Resize.<br>
+        Tekan <b>G</b> (toggle indikator) & <b>R</b> (reset posisi).
+      </p>
+      
+      <div style="height:20px;"></div>
+    </div>
+
+    <div style="padding: 16px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border);">
+      <button class="btn" id="renderBtn" style="background:#10b981; color:#fff;">Render Poster</button>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button class="btn secondary" id="savePng">Download PNG</button>
+        <button class="btn secondary" id="savePdf">Download PDF</button>
       </div>
     </div>
   </aside>
