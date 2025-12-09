@@ -1,7 +1,7 @@
 /******************************************************************
- * jadwal.js — v23 (Fixed Drag/Geser Responsiveness)
- * - Fixed: Dragging logic now prevents default events immediately
- * - Fixed: Hit testing made more robust
+ * jadwal.js — v24 (Updated Flight Schedule Data)
+ * - Fixed: Dragging logic & Hit testing
+ * - Update: Jadwal penerbangan baru (Lombok, Surabaya, Jakarta)
  ******************************************************************/
 
 // ===== Basis koordinat
@@ -170,13 +170,17 @@ const ASSETS = {
 const state = {
   bgURL: ASSETS.bg,
   globalColor: '#ffffff',
+  // --- UPDATED ARRIVALS ---
   arrivals: [
     { airline:'SUPER AIR JET', flight:'IU 370', city:'JAKARTA',  time:'10:15 WIB' },
-    { airline:'WINGS AIR',     flight:'IW 1880', city:'SURABAYA', time:'12:40 WIB' }
+    { airline:'WINGS AIR',     flight:'IW 1844', city:'LOMBOK',  time:'12:30 WIB' },
+    { airline:'WINGS AIR',     flight:'IW 1880', city:'SURABAYA', time:'16:25 WIB' }
   ],
+  // --- UPDATED DEPARTURES ---
   departures: [
+    { airline:'WINGS AIR',     flight:'IW 1881', city:'SURABAYA', time:'07:00 WIB' },
     { airline:'SUPER AIR JET', flight:'IU 371', city:'JAKARTA',  time:'10:55 WIB' },
-    { airline:'WINGS AIR',     flight:'IW 1881', city:'SURABAYA', time:'13:00 WIB' }
+    { airline:'WINGS AIR',     flight:'IW 1845', city:'LOMBOK',  time:'12:55 WIB' }
   ]
 };
 
@@ -251,7 +255,7 @@ function sizes(){
     rowFont  : `800 ${szRow}px Montserrat, system-ui, sans-serif`,
     hoursFont: `900 ${szHours}px Montserrat, system-ui, sans-serif`,
     hoursColor: hoursCol,
-    rowH     : Math.round(szRow * 1.2),
+    rowH      : Math.round(szRow * 1.2),
     dateH : Math.round(szDate * 1.12),
     hoursH: Math.round(szHours * 1.12),
     logoBaseH : 34
@@ -393,7 +397,7 @@ function populateDateDropdowns(){
   selDay.value = now.getDate();
 
   btnDateGo.onclick = () => {
-     applyDateFromDropdown();
+      applyDateFromDropdown();
   };
 
   applyDateFromDropdown();
@@ -608,7 +612,7 @@ function onMove(e){
 // Event Handler: Up / End
 function onUp(){ 
   if(dragging || resizingLogo) {
-     saveJSON(LS_POS, posOverrides); 
+      saveJSON(LS_POS, posOverrides); 
   }
   dragging = null; 
   resizingLogo = null; 
