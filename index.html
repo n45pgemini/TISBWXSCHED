@@ -3,300 +3,122 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a">
-  <title>Flight Schedule Poster – WA Status</title>
+  <meta name="theme-color" content="#1a1a1a">
+  <title>Flight Schedule Poster – 2025</title>
   
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <style>
-    :root { 
-      --bg: #0f172a; 
-      --panel-bg: rgba(17, 26, 45, 0.95);
-      --text: #f8fafc; 
-      --accent: #0ea5e9;
-      --accent-hover: #0284c7;
-      --border: rgba(255, 255, 255, 0.1);
-      --input-bg: rgba(15, 23, 42, 0.6);
-      --fab-bg: #0ea5e9;
-      --fab-text: #fff;
-    }
-
-    * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-    
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: var(--bg); color: var(--text);
-      margin: 0; padding: 0;
-      height: 100svh; width: 100vw;
-      overflow: hidden;
-      display: flex;
-    }
-
-    /* ===== MAIN CANVAS AREA ===== */
-    main {
-      flex: 1;
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-      background-color: #0a1425;
-      background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, transparent 50%);
-      background-size: 100% 100%;
-      z-index: 1;
-      padding: 20px;
-      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    canvas {
-      background: #222; 
-      border-radius: 12px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-      height: 100%; 
-      max-height: calc(100svh - 40px);
-      width: auto;
-      aspect-ratio: 1080 / 1920;
-      object-fit: contain;
-    }
-
-    /* ===== SIDEBAR ===== */
-    aside {
-      width: 400px;
-      height: 100%;
-      background: var(--panel-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      z-index: 100;
-      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 5px 0 25px rgba(0,0,0,0.5);
-    }
-
-    .aside-content {
-      flex: 1; overflow-y: auto; padding: 20px;
-      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
-    }
-    
-    body.panel-collapsed aside { transform: translateX(-100%); position: absolute; }
-    body.panel-collapsed main { margin-left: 0; }
-
-    /* ===== UI COMPONENTS ===== */
-    h2 { margin: 0 0 12px; font-size: 20px; color: var(--accent); letter-spacing: -0.5px; }
-    label { display: block; margin-top: 14px; margin-bottom: 6px; font-weight: 600; font-size: 12px; color: #9fb3c9; }
-    
-    input[type="text"], input[type="number"], input[type="file"], select {
-      width: 100%; padding: 10px 12px; border-radius: 8px; 
-      border: 1px solid var(--border);
-      background: var(--input-bg); color: #fff;
-      font-size: 13px; font-family: inherit;
-      transition: all 0.2s ease;
-    }
-    input:focus, select:focus { 
-      border-color: var(--accent); 
-      background: rgba(0,0,0,0.5); 
-      box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
-    }
-
-    /* Buttons */
-    .btn {
-      background: var(--accent); color: var(--fab-text); 
-      border: none; padding: 12px; border-radius: 8px;
-      cursor: pointer; width: 100%; font-weight: 700; font-size: 13px;
-      margin-top: 8px;
-      display: flex; justify-content: center; align-items: center; gap: 8px;
-      transition: all 0.2s ease;
-    }
-    .btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
-    .btn:active { transform: translateY(0) scale(0.98); }
-    .btn.secondary { background: #334155; color: #e5e7eb; }
-
-    .small { font-size: 11px; color: #94a3b8; display: block; margin-top: 4px; }
-    .small-divider { border: 0; border-top: 1px solid var(--border); margin: 16px 0; }
-    .section-title { margin-top: 18px; font-weight: 700; color: #38bdf8; font-size: 13px; text-transform: uppercase; }
-
-    /* ===== AIRLINE LIST (DESKTOP GRID) ===== */
-    .airline-list { display: flex; flex-direction: column; gap: 8px; }
-    
-    .airline-row { 
-      display: grid; 
-      grid-template-columns: 1.6fr 0.9fr 1.4fr 0.9fr 32px; 
-      gap: 6px; 
-      align-items: center; 
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 10px;
-      padding: 10px;
-    }
-    
-    .airline-row input { 
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px; padding: 8px; 
-      font-size: 11px; font-weight: 600; color: #f1f5f9;
-      min-width: 0;
-      box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); 
-    }
-    
-    .airline-row button { 
-      background: rgba(239, 68, 68, 0.2); color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      padding: 0; height: 32px; border-radius: 6px; margin:0;
-      cursor: pointer;
-    }
-    .airline-row button:hover { background: #ef4444; color: #fff; }
-
-    /* Logo Control Wrapper */
-    .logo-wrapper {
-      grid-column: 1 / -1; 
-      display: flex; align-items: center; gap: 6px;
-      margin-top: 4px; padding-top: 6px;
-      border-top: 1px dashed rgba(255,255,255,0.1);
-    }
-    .logo-controls input {
-       width: 50px; text-align: center; padding: 4px; height: 28px;
-    }
-
-    /* Accordion */
-    details {
-      background: rgba(0,0,0,0.2); border-radius: 8px;
-      margin-top: 12px; border: 1px solid var(--border);
-    }
-    details summary {
-      padding: 10px; cursor: pointer; font-weight: 600; font-size: 12px;
-      list-style: none; display: flex; justify-content: space-between; align-items: center;
-    }
-    details summary::after { content: '+'; font-weight: 800; color: var(--accent); }
-    details[open] summary::after { content: '−'; }
-    .details-content { padding: 12px; border-top: 1px solid var(--border); }
-
-    /* FAB Toggle */
-    #togglePanel {
-      position: fixed; bottom: 24px; right: 24px; z-index: 200;
-      background: var(--fab-bg); color: var(--fab-text);
-      border: none; border-radius: 50%; width: 56px; height: 56px; padding: 0;
-      font-weight: 700; cursor: pointer; 
-      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
-      display: flex; justify-content: center; align-items: center;
-    }
-    #togglePanel svg { width: 26px; height: 26px; stroke-width: 2.5; }
-
-    /* ===== MOBILE RESPONSIVE ===== */
-    @media (max-width: 900px) {
-      body { flex-direction: column; }
-      main { position: fixed; inset: 0; padding: 16px 16px 80px 16px; }
-      canvas { width: 100%; height: 100%; object-fit: contain; }
-      aside { position: fixed; inset: 0; width: 85%; max-width: 340px; box-shadow: 10px 0 40px rgba(0,0,0,0.6); }
-      
-      .airline-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; }
-      .airline-row input { flex: 1 1 45%; min-width: 110px; }
-      
-      .logo-wrapper { 
-        flex: 1 1 auto; 
-        order: 5; 
-        margin-top: 0; border-top: none; padding-top: 0;
-      }
-      .airline-row button { flex: 0 0 32px; width: 32px !important; order: 6; }
-      
-      #togglePanel { bottom: 20px; right: 20px; width: 50px; height: 50px; }
-    }
-  </style>
+  <link rel="stylesheet" href="jadwal.css">
 </head>
-<body class="">
-
-  <button id="togglePanel">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-      <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
-    </svg>
-  </button>
-
-  <aside>
-    <div class="aside-content">
-      <h2>Generator Poster Jadwal</h2>
-
-      <label>Hari & Tanggal</label>
-      <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
-
-      <div id="dateBuilder" style="margin-top:6px; display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:6px;">
-        <select id="selDay"></select> <select id="selMonth"></select> <select id="selYear"></select>
-        <button class="btn secondary" id="applyDateSmall" type="button" style="margin-top:0; padding:0 12px;">Set</button>
-      </div>
-      <span class="small">Format otomatis: HARI, DD BULAN YYYY</span>
-
-      <label>Background</label>
-      <select id="bgSelect">
-        <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
-        <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
-        <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
-        <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
-        <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
-      </select>
-      <input type="file" id="bgInput" accept="image/*" style="margin-top:6px;" />
-
-      <div class="section-title">KEDATANGAN / ARRIVAL</div>
-      <div id="arrivals" class="airline-list"></div>
-      <button class="btn secondary" id="addArrival">+ Tambah Baris Kedatangan</button>
-
-      <div class="section-title">KEBERANGKATAN / DEPARTURE</div>
-      <div id="departures" class="airline-list"></div>
-      <button class="btn secondary" id="addDeparture">+ Tambah Baris Keberangkatan</button>
-
-      <details open>
-        <summary>Pengaturan Teks & Ukuran</summary>
-        <div class="details-content">
-          <label>Teks Operating Hours</label>
-          <input id="hoursText" type="text" value="Operating Hours 06.00 - 18.00 WIB" />
-          
-          <hr class="small-divider">
-          
-          <label>Ukuran Font (Pixel)</label>
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;">
-            <div><label style="margin-top:0;font-size:10px">Tanggal</label><input id="sizeDate" type="number" value="40"></div>
-            <div><label style="margin-top:0;font-size:10px">Jadwal</label><input id="sizeRow" type="number" value="30"></div>
-            <div><label style="margin-top:0;font-size:10px">Jam Ops</label><input id="sizeHours" type="number" value="35"></div>
-          </div>
-          
-          <label>Warna Teks</label>
-          <div style="display:flex; gap:8px;">
-            <div style="flex:1;">
-              <label style="margin-top:0; font-size:10px;">Global</label>
-              <input id="allTextColor" type="color" value="#ffffff" style="height:35px; padding:0;">
-              <input id="allTextHex" type="text" value="#ffffff" placeholder="#FFFFFF" style="margin-top:4px;">
-            </div>
-            <div style="flex:1;">
-              <label style="margin-top:0; font-size:10px;">Jam Ops</label>
-              <input id="hoursColor" type="color" value="#ffffff" style="height:35px; padding:0;">
-            </div>
-          </div>
-
-          <div style="display:flex; gap:8px; margin-top:12px; align-items:center;">
-            <input id="showIndicators" type="checkbox" checked style="width:auto;">
-            <label for="showIndicators" style="margin:0; font-weight:400;">Tampilkan Indikator ID + Koordinat</label>
-          </div>
-
-          <button id="lockSettings" class="btn" style="background:#f59e0b; color:#0f172a; margin-top:16px;">
-            🔒 Kunci & Simpan Pengaturan
-          </button>
-        </div>
-      </details>
-      
-      <p class="small" style="margin-top:16px; opacity:0.7;">
-        Tips: Shift + Drag logo untuk resize.
-      </p>
-      <div style="height:20px;"></div>
-    </div>
-
-    <div style="padding: 16px; background: rgba(0,0,0,0.3); border-top: 1px solid var(--border);">
-      <button class="btn" id="renderBtn" style="background:#10b981; color:#fff;">Render Poster</button>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-        <button class="btn secondary" id="savePng">Download PNG</button>
-        <button class="btn secondary" id="savePdf">Download PDF</button>
-      </div>
-    </div>
-  </aside>
+<body>
 
   <main>
     <canvas id="poster" width="1080" height="1920"></canvas>
   </main>
 
-  <script src="jadwal.js?v=24"></script>
+  <div id="controls-container">
+    <button id="toggle-controls" class="fab">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+    </button>
+    
+    <aside id="controls-panel">
+      <div class="panel-header">
+        <h2>Flight Poster Generator</h2>
+        <button id="close-panel" class="close-btn">&times;</button>
+      </div>
+
+      <div class="panel-content">
+        <section>
+          <h3>Umum</h3>
+          <div class="form-group">
+            <label for="dateText">Hari & Tanggal</label>
+            <input id="dateText" type="text" value="MINGGU, 19 OKTOBER 2025" />
+            <div class="date-builder">
+              <select id="selDay"></select>
+              <select id="selMonth"></select>
+              <select id="selYear"></select>
+              <button class="btn" id="applyDateSmall">Set</button>
+            </div>
+            <p class="small">Format: HARI, DD BULAN YYYY</p>
+          </div>
+          <div class="form-group">
+            <label for="bgSelect">Background</label>
+            <select id="bgSelect">
+              <option value="bahan_flyer_bwx.png">Bahan Flyer BWX 1</option>
+              <option value="bahan_flyer_bwx2.png">Bahan Flyer BWX 2</option>
+              <option value="bahan_flyer_bwx3.png">Bahan Flyer BWX 3</option>
+              <option value="bahan_flyer_bwx_tema1.png">Tema Baru 1</option>
+              <option value="bahan_flyer_bwx_tema2.png">Tema Baru 2</option>
+            </select>
+            <input type="file" id="bgInput" accept="image/*" />
+          </div>
+        </section>
+
+        <section>
+          <h3><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg> Kedatangan (Arrival)</h3>
+          <div id="arrivals" class="airline-list"></div>
+          <button class="btn btn-outline" id="addArrival">+ Tambah Kedatangan</button>
+        </section>
+
+        <section>
+          <h3><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><polyline points="19 12 12 19 5 12"/></svg> Keberangkatan (Departure)</h3>
+          <div id="departures" class="airline-list"></div>
+          <button class="btn btn-outline" id="addDeparture">+ Tambah Keberangkatan</button>
+        </section>
+
+        <details class="accordion">
+          <summary>Pengaturan Lanjutan</summary>
+          <div class="accordion-content">
+            <div class="form-group">
+              <label for="hoursText">Teks Operating Hours</label>
+              <input id="hoursText" type="text" value="Operating Hours 06.00 - 18.00 WIB" />
+            </div>
+            <div class="form-group">
+              <label>Ukuran Font (px)</label>
+              <div class="grid-3">
+                <div><label for="sizeDate">Tanggal</label><input id="sizeDate" type="number" value="40"></div>
+                <div><label for="sizeRow">Jadwal</label><input id="sizeRow" type="number" value="30"></div>
+                <div><label for="sizeHours">Jam Ops</label><input id="sizeHours" type="number" value="35"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Warna Teks</label>
+               <div class="grid-2">
+                <div>
+                  <label for="allTextColor">Global</label>
+                  <input id="allTextColor" type="color" value="#ffffff">
+                  <input id="allTextHex" type="text" value="#ffffff" placeholder="#FFFFFF">
+                </div>
+                 <div>
+                  <label for="hoursColor">Jam Ops</label>
+                  <input id="hoursColor" type="color" value="#ffffff">
+                </div>
+              </div>
+            </div>
+             <div class="form-group">
+                <label class="flex-label">
+                  <input id="showIndicators" type="checkbox" checked>
+                  Tampilkan Indikator Posisi
+                </label>
+            </div>
+            <button id="lockSettings" class="btn btn-secondary">🔒 Kunci Posisi</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="panel-footer">
+        <button class="btn btn-primary" id="renderBtn">Render Ulang</button>
+        <div class="grid-2">
+            <button class="btn" id="savePng">Download PNG</button>
+            <button class="btn" id="savePdf">Download PDF</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="jadwal.js?v=25"></script>
 </body>
 </html>

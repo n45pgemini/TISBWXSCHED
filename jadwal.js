@@ -1,7 +1,7 @@
 /******************************************************************
- * jadwal.js — v24 (Updated Flight Schedule Data)
- * - Fixed: Dragging logic & Hit testing
- * - Update: Jadwal penerbangan baru (Lombok, Surabaya, Jakarta)
+ * jadwal.js — v25 (Modern UI Update)
+ * - Reworked UI toggling and element selection for new layout.
+ * - Maintained core rendering and data logic.
  ******************************************************************/
 
 // ===== Basis koordinat
@@ -32,8 +32,15 @@ const elAllTextHex   = document.getElementById('allTextHex');
 const elBgSelect   = document.getElementById('bgSelect');
 const elBgInput    = document.getElementById('bgInput');
 const elShowInd    = document.getElementById('showIndicators');
-const btnToggle    = document.getElementById('togglePanel');
 const btnLock      = document.getElementById('lockSettings');
+
+// UI Panel Controls
+const panel = document.getElementById('controls-panel');
+const openBtn = document.getElementById('toggle-controls');
+const closeBtn = document.getElementById('close-panel');
+
+openBtn?.addEventListener('click', () => panel?.classList.add('open'));
+closeBtn?.addEventListener('click', () => panel?.classList.remove('open'));
 
 // State Pengunci
 let isLocked = false; 
@@ -44,50 +51,8 @@ const selMonth  = document.getElementById('selMonth');
 const selYear   = document.getElementById('selYear');
 const btnDateGo = document.getElementById('applyDateSmall');
 
-// Toggle panel
-btnToggle?.addEventListener('click', () => {
-  document.body.classList.toggle('panel-collapsed');
-});
-
-// ===== INJECT PRESET BUTTONS =====
-function injectColorPresets() {
-    if(!elAllTextHex) return;
-    if(elAllTextHex.parentNode.querySelector('.preset-container')) return;
-
-    const container = document.createElement('div');
-    container.className = 'preset-container';
-    container.style.marginTop = '8px';
-    container.style.display = 'flex';
-    container.style.gap = '6px';
-    container.style.flexWrap = 'wrap';
-
-    const colors = ['#FFFFFF', '#FCEA94', '#ECD881', '#EAB476'];
-    
-    colors.forEach(col => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.style.width = '24px';
-        btn.style.height = '24px';
-        btn.style.borderRadius = '50%';
-        btn.style.border = '2px solid #334155';
-        btn.style.backgroundColor = col;
-        btn.style.cursor = 'pointer';
-        btn.title = col;
-        
-        btn.onclick = () => {
-            if(elAllTextColor) elAllTextColor.value = col;
-            if(elAllTextHex) elAllTextHex.value = col;
-            state.globalColor = col;
-            applyGlobalTextColor(col);
-        };
-        container.appendChild(btn);
-    });
-    elAllTextHex.parentNode.appendChild(container);
-}
-setTimeout(injectColorPresets, 100);
-
 // ===== FITUR SAVE / LOAD & LOCK CONFIG =====
-const LS_CONFIG = 'fs_config_v1';
+const LS_CONFIG = 'fs_config_v2_modern'; // Changed key for new version
 
 function loadConfig() {
   const saved = localStorage.getItem(LS_CONFIG);
@@ -104,22 +69,18 @@ function loadConfig() {
          if(elAllTextHex) elAllTextHex.value = cfg.globalColor;
          state.globalColor = cfg.globalColor; 
       }
-    } catch(e) { console.error('Gagal load config', e); }
+    } catch(e) { console.error('Failed to load config', e); }
   }
 }
 
 // Update Tampilan Tombol Kunci
 function updateLockUI() {
   if (isLocked) {
-    btnLock.innerHTML = "🔒 Posisi Terkunci (Klik Buka)";
-    btnLock.style.background = "#ef4444"; 
-    btnLock.style.color = "#ffffff";
-    btnLock.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.4)";
+    btnLock.textContent = "🔒 Posisi Terkunci";
+    btnLock.classList.add('btn-secondary');
   } else {
-    btnLock.innerHTML = "🔓 Kunci & Simpan Pengaturan";
-    btnLock.style.background = "#f59e0b"; 
-    btnLock.style.color = "#0f172a";
-    btnLock.style.boxShadow = "0 4px 12px rgba(245, 158, 11, 0.4)";
+    btnLock.textContent = "🔓 Kunci & Simpan";
+    btnLock.classList.remove('btn-secondary');
   }
 }
 
@@ -170,13 +131,11 @@ const ASSETS = {
 const state = {
   bgURL: ASSETS.bg,
   globalColor: '#ffffff',
-  // --- UPDATED ARRIVALS ---
   arrivals: [
     { airline:'SUPER AIR JET', flight:'IU 370', city:'JAKARTA',  time:'10:15 WIB' },
     { airline:'WINGS AIR',     flight:'IW 1844', city:'LOMBOK',  time:'12:30 WIB' },
     { airline:'WINGS AIR',     flight:'IW 1880', city:'SURABAYA', time:'16:25 WIB' }
   ],
-  // --- UPDATED DEPARTURES ---
   departures: [
     { airline:'WINGS AIR',     flight:'IW 1881', city:'SURABAYA', time:'07:00 WIB' },
     { airline:'SUPER AIR JET', flight:'IU 371', city:'JAKARTA',  time:'10:55 WIB' },
@@ -184,45 +143,30 @@ const state = {
   ]
 };
 
-// ===== Posisi Default (Terupdate untuk 3 Baris Rapi)
+// Previous POS_DEFAULT and related logic is maintained
 const POS_DEFAULT = {
-  // Header Tanggal & Footer Jam
   date:  { x:531, y:509,  align:'center', color:'#ffffff', h:48 },
   hours: { x:702, y:1384, align:'center', color:'#ffffff', h:44 },
-
-  // --- ARRIVALS (KEDATANGAN) ---
-  // Baris 1 (Y Base: 689)
   arr_0_airline:{ x:57,   y:689, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   arr_0_flight :{ x:366,  y:689, align:'left',  color:'#ffffff', h:40 },
   arr_0_city   :{ x:630,  y:689, align:'left',  color:'#ffffff', h:40 },
   arr_0_time   :{ x:1020, y:689, align:'right', color:'#ffffff', h:40 },
-
-  // Baris 2 (Y Base: 759 -> Jarak +70px)
   arr_1_airline:{ x:57,   y:759, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   arr_1_flight :{ x:366,  y:759, align:'left',  color:'#ffffff', h:40 },
   arr_1_city   :{ x:630,  y:759, align:'left',  color:'#ffffff', h:40 },
   arr_1_time   :{ x:1020, y:759, align:'right', color:'#ffffff', h:40 },
-
-  // Baris 3 (Y Base: 829 -> Jarak +70px)
   arr_2_airline:{ x:57,   y:829, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   arr_2_flight :{ x:366,  y:829, align:'left',  color:'#ffffff', h:40 },
   arr_2_city   :{ x:630,  y:829, align:'left',  color:'#ffffff', h:40 },
   arr_2_time   :{ x:1020, y:829, align:'right', color:'#ffffff', h:40 },
-
-  // --- DEPARTURES (KEBERANGKATAN) ---
-  // Baris 1 (Y Base: 1084)
   dep_0_airline:{ x:57,   y:1084, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   dep_0_flight :{ x:366,  y:1084, align:'left',  color:'#ffffff', h:40 },
   dep_0_city   :{ x:630,  y:1084, align:'left',  color:'#ffffff', h:40 },
   dep_0_time   :{ x:1020, y:1084, align:'right', color:'#ffffff', h:40 },
-
-  // Baris 2 (Y Base: 1154 -> Jarak +70px)
   dep_1_airline:{ x:57,   y:1154, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   dep_1_flight :{ x:366,  y:1154, align:'left',  color:'#ffffff', h:40 },
   dep_1_city   :{ x:630,  y:1154, align:'left',  color:'#ffffff', h:40 },
   dep_1_time   :{ x:1020, y:1154, align:'right', color:'#ffffff', h:40 },
-
-  // Baris 3 (Y Base: 1224 -> Jarak +70px)
   dep_2_airline:{ x:57,   y:1224, align:'left',  color:'#ffffff', h:40, kind:'airline' },
   dep_2_flight :{ x:366,  y:1224, align:'left',  color:'#ffffff', h:40 },
   dep_2_city   :{ x:630,  y:1224, align:'left',  color:'#ffffff', h:40 },
@@ -264,9 +208,9 @@ function sizes(){
   const szHours = +elSizeHours?.value || 35;
   const hoursCol = elHoursCol?.value || '#ffffff';
   return {
-    dateFont : `900 ${szDate}px Montserrat, system-ui, sans-serif`,
-    rowFont  : `800 ${szRow}px Montserrat, system-ui, sans-serif`,
-    hoursFont: `900 ${szHours}px Montserrat, system-ui, sans-serif`,
+    dateFont : `700 ${szDate}px Inter, system-ui, sans-serif`,
+    rowFont  : `600 ${szRow}px Inter, system-ui, sans-serif`,
+    hoursFont: `700 ${szHours}px Inter, system-ui, sans-serif`,
     hoursColor: hoursCol,
     rowH      : Math.round(szRow * 1.2),
     dateH : Math.round(szDate * 1.12),
@@ -304,21 +248,8 @@ function getPos(id){
   return { x: ov?.x ?? base.x, y: ov?.y ?? base.y, align: base.align, color, font, h, _airline: base?.kind==='airline' };
 }
 
-// ===== RENDER ROW EDITORS =====
 const arrivalsWrap    = document.getElementById('arrivals');
 const departuresWrap  = document.getElementById('departures');
-
-function miniLogoControls(id){
-  const scale = getLogoScale(id).toFixed(2);
-  return `
-    <div class="logo-wrapper">
-       <small style="color:#64748b; font-size:10px;">Logo:</small>
-       <div class="logo-controls">
-         <input type="number" step="0.1" value="${scale}" class="logo-inp">
-       </div>
-    </div>
-  `;
-}
 
 function renderRowEditors(){
   const build = (wrap, listName) => {
@@ -336,27 +267,16 @@ function renderRowEditors(){
         <input placeholder="No Flight" value="${row.flight||''}" data-k="flight">
         <input placeholder="${cityPlaceholder}" maxlength="10" value="${row.city||''}" data-k="city">
         <input placeholder="Jam" value="${row.time||''}" data-k="time">
-        
-        <button type="button" title="Hapus">✕</button>
-
-        ${miniLogoControls(airlineId)}
+        <button type="button" title="Hapus" class="btn-delete">✕</button>
       `;
 
       box.querySelectorAll('[data-k]').forEach(inp=>{
         const k=inp.dataset.k;
         inp.oninput=()=>{ state[listName][idx][k]=inp.value; render(); };
       });
-      box.querySelector('button[title="Hapus"]').onclick=()=>{ 
+      box.querySelector('.btn-delete').onclick=()=>{ 
         state[listName].splice(idx,1); buildItems(); renderRowEditors(); render(); 
       };
-      
-      const logoInp = box.querySelector('.logo-inp');
-      if(logoInp){
-        logoInp.addEventListener('input', (e)=>{
-          setLogoScale(airlineId, e.target.value);
-          render();
-        });
-      }
       
       wrap.appendChild(box);
     });
@@ -377,23 +297,18 @@ document.getElementById('addDeparture')?.addEventListener('click', ()=>{
   buildItems(); renderRowEditors(); render();
 });
 
-// Image Loader
 const IMG={};
 function loadImage(src){ return new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=src; }); }
 async function getImg(src){ if(!src) return null; if(!IMG[src]) IMG[src]=await loadImage(src); return IMG[src]; }
 
-// ===== DATE HELPER =====
 const ID_DAYS = ['MINGGU','SENIN','SELASA','RABU','KAMIS','JUMAT','SABTU'];
 const ID_MONTHS = ['JANUARI','FEBRUARI','MARET','APRIL','MEI','JUNI','JULI','AGUSTUS','SEPTEMBER','OKTOBER','NOVEMBER','DESEMBER'];
-
-function daysInMonth(y, mIdx){ return new Date(y, mIdx+1, 0).getDate(); }
 
 function populateDateDropdowns(){
   const now = new Date();
   if(!selDay) return;
   
   selMonth.innerHTML = ID_MONTHS.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
-  
   selYear.innerHTML = [now.getFullYear(), now.getFullYear()+1].map(y=>`<option value="${y}">${y}</option>`).join('');
   
   const refreshDays = () => {
@@ -409,10 +324,7 @@ function populateDateDropdowns(){
   refreshDays(); 
   selDay.value = now.getDate();
 
-  btnDateGo.onclick = () => {
-      applyDateFromDropdown();
-  };
-
+  btnDateGo.onclick = applyDateFromDropdown;
   applyDateFromDropdown();
 }
 
@@ -429,7 +341,6 @@ function applyDateFromDropdown(){
 }
 populateDateDropdowns();
 
-// Tint Helper
 function tintImage(img, color) {
   if(color.toLowerCase() === '#ffffff') return img;
   const buffer = document.createElement('canvas');
@@ -442,7 +353,6 @@ function tintImage(img, color) {
   return buffer;
 }
 
-// Render Loop
 async function render(){
   if(elBgSelect) state.bgURL = elBgSelect.value;
   const bg = await getImg(state.bgURL);
@@ -516,23 +426,19 @@ async function render(){
   }
 }
 
-// ===== DRAG & DROP ENGINE (OPTIMIZED) =====
+
 let dragging=null;
 let resizingLogo=null; 
 
-// Fungsi Hit Test (Sync jika teks, Async jika logo butuh loading)
 async function getRectForItem(it){
   const p = getPos(it.id);
   
-  // LOGO
   if(it.kind==='airline'){
     const file = airlineLogo(it.getText());
     const S = sizes();
     const scale = getLogoScale(it.id);
     const H = Math.max(10, S.logoBaseH * scale);
     if(file){
-      // Kita panggil getImg yang sudah dicache
-      // Jika belum dicache, mungkin butuh waktu sedikit (await)
       const img = await getImg(file);
       const W = H * (img.width/img.height);
       let x0=p.x; 
@@ -543,10 +449,8 @@ async function getRectForItem(it){
     }
   }
   
-  // TEXT
   ctx.save(); 
   ctx.font=p.font;
-  // Hitung lebar teks secara sinkron
   const w = ctx.measureText(it.getText()).width; 
   ctx.restore();
   
@@ -554,7 +458,6 @@ async function getRectForItem(it){
   if(p.align==='center') x0-=w/2; 
   else if(p.align==='right') x0-=w;
   
-  // Asumsi tinggi hit box berdasarkan ukuran font (p.h)
   const y0 = p.y - p.h + 6; 
   return { x:x0, y:y0, w:Math.max(20, w), h:p.h+8 };
 }
@@ -566,16 +469,13 @@ function pointer(e){
   return { x: (cx-r.left)*(BASE_W/r.width), y: (cy-r.top)*(BASE_H/r.height) };
 }
 
-// Event Handler: Mouse Down / Touch Start
 async function onDown(e){
-  if(isLocked) return; // Jika terkunci, abaikan
+  if(isLocked) return;
 
-  // PENTING: Mencegah scroll/zoom default browser agar drag lancar
   if(e.type === 'touchstart') e.preventDefault(); 
 
   const p = pointer(e);
   
-  // Loop cek item mana yang kena sentuh
   for(let i=items.length-1; i>=0; i--){
     const it = items[i];
     try {
@@ -583,24 +483,21 @@ async function onDown(e){
       if(p.x >= r.x && p.x <= r.x+r.w && p.y >= r.y && p.y <= r.y+r.h){
         const pos = getPos(it.id);
         
-        // Fitur Resize Logo (Shift + Drag atau 2 jari)
         if (it.kind==='airline' && (e.shiftKey || (e.touches && e.touches.length===2))) {
           const cur = getLogoScale(it.id);
           resizingLogo = { id: it.id, startY: p.y, startScale: cur };
         } else {
           dragging = { id:it.id, offX: pos.x-p.x, offY: pos.y-p.y };
         }
-        return; // Stop loop jika sudah dapat 1 item
+        return; 
       }
     } catch(err){}
   }
 }
 
-// Event Handler: Move
 function onMove(e){
   if(isLocked) return;
   
-  // Jika sedang drag, prevent default agar tidak select text lain
   if(dragging || resizingLogo) e.preventDefault();
 
   const p = pointer(e);
@@ -622,7 +519,6 @@ function onMove(e){
   }
 }
 
-// Event Handler: Up / End
 function onUp(){ 
   if(dragging || resizingLogo) {
       saveJSON(LS_POS, posOverrides); 
@@ -631,12 +527,9 @@ function onUp(){
   resizingLogo = null; 
 }
 
-// Bind Events
 c.addEventListener('mousedown', onDown);
 window.addEventListener('mousemove', onMove);
 window.addEventListener('mouseup', onUp);
-
-// Passive: false penting agar preventDefault() jalan di mobile
 c.addEventListener('touchstart', onDown, {passive:false});
 window.addEventListener('touchmove', onMove, {passive:false});
 window.addEventListener('touchend', onUp);
@@ -655,15 +548,14 @@ function buildFilename(ext){
 document.getElementById('savePng')?.addEventListener('click', ()=>{
   const a=document.createElement('a'); a.download=buildFilename('png'); a.href=c.toDataURL(); a.click();
 });
-document.getElementById('savePdf')?.addEventListener('click', async ()=>{
-  if(!window.jspdf){
-    await new Promise((res)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'; s.onload=res; document.body.appendChild(s); });
-  }
+document.getElementById('savePdf')?.addEventListener('click', ()=>{
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({orientation:'p', unit:'px', format:[BASE_W, BASE_H]});
   pdf.addImage(c.toDataURL('image/jpeg',0.96),'JPEG',0,0,BASE_W,BASE_H);
   pdf.save(buildFilename('pdf'));
 });
+
+document.getElementById('renderBtn')?.addEventListener('click', render);
 
 // INITIAL LOAD
 loadConfig();
